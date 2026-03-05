@@ -1,6 +1,6 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
-const { getHistoricalPrice } = require('../services/priceService');
+const { getHistoricalPrice } = require('../services/historicalPriceService');
 const router = express.Router();
 const prisma = new PrismaClient();
 
