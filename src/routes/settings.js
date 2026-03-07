@@ -5,9 +5,13 @@ const prisma = new PrismaClient();
 
 router.get('/', async (req, res) => {
   try {
-    let settings = await prisma.settings.findFirst();
+    let settings = await prisma.settings.findUnique({
+      where: { userId: req.session.userId }
+    });
     if (!settings) {
-      settings = await prisma.settings.create({ data: {} });
+      settings = await prisma.settings.create({ 
+        data: { userId: req.session.userId } 
+      });
     }
     res.json(settings);
   } catch (error) {
@@ -17,16 +21,15 @@ router.get('/', async (req, res) => {
 
 router.put('/', async (req, res) => {
   try {
-    console.log('Settings update request body:', req.body);
-    const settings = await prisma.settings.findFirst();
+    const settings = await prisma.settings.findUnique({
+      where: { userId: req.session.userId }
+    });
     const updated = await prisma.settings.update({
       where: { id: settings.id },
       data: req.body
     });
-    console.log('Settings updated:', updated);
     res.json(updated);
   } catch (error) {
-    console.error('Settings update error:', error);
     res.status(500).json({ error: error.message });
   }
 });

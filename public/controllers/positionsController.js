@@ -1,11 +1,13 @@
 const positionsController = {
   filterType: 'all',
   sortBy: 'name',
+  searchQuery: '',
   
   async render() {
     const app = document.getElementById('app');
     const holdings = await api.holdings.getAll('', appState.currency);
     const transactions = await api.transactions.getAll();
+    const portfolios = await api.portfolios.getAll();
 
     // Group all assets that have transactions (even if holding is 0)
     const assetsWithTransactions = new Map();
@@ -13,9 +15,11 @@ const positionsController = {
     transactions.forEach(t => {
       const key = `${t.portfolioId}-${t.assetId}`;
       if (!assetsWithTransactions.has(key)) {
+        const portfolio = portfolios.find(p => p.id === t.portfolioId);
         assetsWithTransactions.set(key, {
           asset: t.asset,
           portfolioId: t.portfolioId,
+          portfolioName: portfolio ? portfolio.name : 'Unknown',
           assetId: t.assetId,
           transactions: [],
           holding: null
@@ -27,12 +31,15 @@ const positionsController = {
     // Merge with current holdings
     holdings.forEach(h => {
       const key = `${h.portfolioId}-${h.assetId}`;
+      const portfolio = portfolios.find(p => p.id === h.portfolioId);
       if (assetsWithTransactions.has(key)) {
         assetsWithTransactions.get(key).holding = h;
+        assetsWithTransactions.get(key).portfolioName = portfolio ? portfolio.name : 'Unknown';
       } else {
         assetsWithTransactions.set(key, {
           asset: h.asset,
           portfolioId: h.portfolioId,
+          portfolioName: portfolio ? portfolio.name : 'Unknown',
           assetId: h.assetId,
           holding: h,
           transactions: transactions.filter(t => t.assetId === h.assetId && t.portfolioId === h.portfolioId)
@@ -44,7 +51,8 @@ const positionsController = {
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <h2 style="margin: 0;">${appState.t('positions.title')}</h2>
-          <div style="display: flex; gap: 1rem;">
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <input type="text" id="searchPositions" placeholder="${appState.language === 'fr' ? 'Rechercher...' : 'Search...'}" style="width: 200px;" value="${this.searchQuery}">
             <select id="filterType" style="width: auto;">
               <option value="all">${appState.t('positions.filterAll')}</option>
               <option value="crypto">${appState.t('add.typeCrypto')}</option>
@@ -62,7 +70,14 @@ const positionsController = {
           </div>
         </div>
         ${Array.from(assetsWithTransactions.values())
-          .filter(item => this.filterType === 'all' || item.asset.type === this.filterType)
+          .filter(item => {
+            const matchType = this.filterType === 'all' || item.asset.type === this.filterType;
+            const matchSearch = !this.searchQuery || 
+              item.asset.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+              item.asset.symbol.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+              item.portfolioName.toLowerCase().includes(this.searchQuery.toLowerCase());
+            return matchType && matchSearch;
+          })
           .sort((a, b) => {
             const aHolding = a.holding;
             const bHolding = b.holding;
@@ -119,11 +134,16 @@ const positionsController = {
           
           return `
             <div style="margin-bottom: 2rem; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
-              <div style="background: var(--bg-tertiary); padding: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                <div>
-                  <h3 style="margin: 0;">${item.asset.name} (${item.asset.symbol})</h3>
-                  <div style="color: var(--text-secondary); margin-top: 0.5rem;">
-                    ${quantity > 0 ? `${quantity} × ${appState.formatCurrency(avgPrice)} = ${appState.formatCurrency(currentValue)}` : `${appState.t('positions.soldOut')}`}
+              <div style="background: var(--bg-tertiary); padding: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; cursor: pointer;" onclick="positionsController.toggleTransactions('${item.portfolioId}-${item.assetId}')">
+                <div style="flex: 1; display: flex; align-items: center; gap: 1rem;">
+                  <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: white; flex-shrink: 0;">
+                    ${item.asset.symbol.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 style="margin: 0;">${item.asset.name} (${item.asset.symbol})</h3>
+                    <div style="color: var(--text-secondary); margin-top: 0.5rem;">
+                      <strong>${item.portfolioName}</strong> • ${quantity > 0 ? `${quantity} × ${appState.formatCurrency(avgPrice)} = ${appState.formatCurrency(currentValue)}` : `${appState.t('positions.soldOut')}`}
+                    </div>
                   </div>
                 </div>
                 ${quantity > 0 ? `
@@ -133,16 +153,16 @@ const positionsController = {
                     </div>
                     <div style="color: var(--text-secondary); margin-top: 0.25rem;">${appState.t('positions.currentPrice')}: ${appState.formatCurrency(currentPrice)}</div>
                   </div>
-                  <div style="display: flex; gap: 0.5rem;">
+                  <div style="display: flex; gap: 0.5rem;" onclick="event.stopPropagation();">
                     <button onclick="positionsController.sellPosition('${h.id}', '${item.assetId}', '${item.asset.name}', '${item.asset.symbol}', ${quantity}, ${avgPrice}, '${item.portfolioId}')" style="background: var(--warning);">${appState.t('positions.sell')}</button>
-                    <button onclick="positionsController.editPosition('${h.id}', '${item.asset.name}', ${quantity}, ${avgPrice})">${appState.t('positions.edit')}</button>
+                    <button onclick='positionsController.editPosition("${h.id}", "${item.asset.name}", ${quantity}, ${avgPrice}, "${item.portfolioId}", ${JSON.stringify(JSON.stringify(portfolios))})'>${appState.t('positions.edit')}</button>
                     <button onclick="positionsController.deletePosition('${h.id}', '${item.asset.name}')" style="background: var(--danger);">${appState.t('positions.delete')}</button>
                   </div>
                 ` : ''}
               </div>
               
               ${assetTransactions.length > 0 ? `
-                <div style="padding: 1rem;">
+                <div id="transactions-${item.portfolioId}-${item.assetId}" style="padding: 1rem; display: none;">
                   <h4 style="margin: 0 0 1rem 0; color: var(--text-secondary);">${appState.t('positions.transactions')} (${assetTransactions.length})</h4>
                   <table style="width: 100%;">
                     <thead>
@@ -205,6 +225,11 @@ const positionsController = {
         <div style="position: relative; max-width: 500px; margin: 2rem auto; background: var(--bg-secondary); padding: 2rem; border-radius: 12px; border: 1px solid var(--border);">
           <h3 style="margin-bottom: 1.5rem;">${appState.t('edit.position')}</h3>
           <form id="editForm">
+            <div class="form-group">
+              <label>${appState.t('edit.portfolio')}</label>
+              <select name="portfolioId" id="editPortfolioId" required>
+              </select>
+            </div>
             <div class="form-group">
               <label>${appState.t('edit.quantity')}</label>
               <input type="number" step="0.00000001" name="quantity" id="editQuantity" required>
@@ -303,6 +328,20 @@ const positionsController = {
     document.getElementById('filterType').value = this.filterType;
     document.getElementById('sortBy').value = this.sortBy;
     
+    // Add search listener
+    let searchTimeout;
+    document.getElementById('searchPositions').addEventListener('input', (e) => {
+      this.searchQuery = e.target.value;
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        const scrollPos = window.scrollY;
+        this.render().then(() => {
+          window.scrollTo(0, scrollPos);
+          document.getElementById('searchPositions').focus();
+        });
+      }, 300);
+    });
+    
     // Add filter and sort listeners
     document.getElementById('filterType').addEventListener('change', (e) => {
       this.filterType = e.target.value;
@@ -325,6 +364,7 @@ const positionsController = {
         
         try {
           await api.put(`/holdings/${data.holdingId}`, {
+            portfolioId: data.portfolioId,
             quantity: parseFloat(data.quantity),
             avgPrice: parseFloat(data.avgPrice)
           });
@@ -412,7 +452,13 @@ const positionsController = {
     }
   },
 
-  editPosition(id, name, quantity, avgPrice) {
+  editPosition(id, name, quantity, avgPrice, portfolioId, portfoliosJson) {
+    const portfolios = JSON.parse(portfoliosJson);
+    const select = document.getElementById('editPortfolioId');
+    select.innerHTML = portfolios.map(p => 
+      `<option value="${p.id}" ${p.id === portfolioId ? 'selected' : ''}>${p.name}</option>`
+    ).join('');
+    
     document.getElementById('editHoldingId').value = id;
     document.getElementById('editQuantity').value = quantity;
     document.getElementById('editAvgPrice').value = avgPrice;
@@ -507,6 +553,13 @@ const positionsController = {
       } catch (error) {
         alert('Erreur: ' + error.message);
       }
+    }
+  },
+
+  toggleTransactions(id) {
+    const element = document.getElementById(`transactions-${id}`);
+    if (element) {
+      element.style.display = element.style.display === 'none' ? 'block' : 'none';
     }
   }
 };

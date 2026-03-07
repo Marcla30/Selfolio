@@ -126,7 +126,7 @@ const appState = {
         'settings.saved': 'Paramètres enregistrés',
         'add.title': 'Ajouter un actif',
         'add.manual': 'Ajout manuel',
-        'add.import': 'Import Bourse Direct',
+        'add.import': 'Import',
         'add.wallet': 'Import wallet',
         'add.type': 'Type',
         'add.search': 'Rechercher un actif',
@@ -165,6 +165,18 @@ const appState = {
         'add.historyIgnored': 'ignorés',
         'add.historyErrors': 'erreurs',
         'add.historyShowIgnored': 'Voir les actifs ignorés',
+        'add.successToast': 'Transaction ajoutée avec succès',
+        'add.csvImportTitle': 'Import CSV Portfolio Tracker',
+        'add.csvImportDesc': 'Importez les transactions depuis un fichier CSV exporté depuis Portfolio Tracker.',
+        'add.csvFile': 'Fichier CSV',
+        'add.csvImportButton': 'Importer le CSV',
+        'add.csvImportReading': 'Lecture du fichier...',
+        'add.csvImportEmpty': 'Fichier vide ou invalide',
+        'add.csvImportDone': 'Import terminé',
+        'add.csvImportTransactions': 'transactions importées',
+        'add.csvImportErrors': 'Erreurs',
+        'add.csvImportPortfolioNotFound': 'portefeuille introuvable',
+        'add.csvImportInvalidRow': 'données invalides',
         'confirm.deleteWallet': 'Supprimer le wallet',
         'confirm.deleteWalletMsg': 'Êtes-vous sûr de vouloir supprimer ce wallet ?',
         'confirm.deleteTransaction': 'Supprimer la transaction',
@@ -175,6 +187,7 @@ const appState = {
         'confirm.confirm': 'Confirmer',
         'edit.position': 'Éditer la position',
         'edit.transaction': 'Éditer la transaction',
+        'edit.portfolio': 'Portefeuille',
         'edit.quantity': 'Quantité',
         'edit.avgPrice': 'Prix moyen',
         'edit.type': 'Type',
@@ -205,6 +218,13 @@ const appState = {
         'settings.edit': 'Éditer',
         'settings.deletePortfolio': 'Supprimer',
         'settings.deleteConfirm': 'Supprimer ce portefeuille et toutes ses positions ?',
+        'settings.exportTitle': 'Export CSV',
+        'settings.exportDesc': 'Sélectionnez les portefeuilles à exporter. Le fichier CSV contiendra toutes les transactions associées.',
+        'settings.exportSelectAll': 'Tout sélectionner',
+        'settings.exportDeselectAll': 'Tout déselectionner',
+        'settings.exportBtn': 'Télécharger le CSV',
+        'settings.exportEmpty': 'Sélectionnez au moins un portefeuille',
+        'settings.exportFilename': 'transactions',
         'settings.maintenance': 'Maintenance',
         'settings.resync': 'Resynchroniser les holdings',
         'settings.resyncDesc': 'Recalcule tous les holdings à partir des transactions. Utilisez cette option si vous constatez des erreurs de calcul.',
@@ -218,7 +238,13 @@ const appState = {
         'stats.best': 'Meilleur performer',
         'stats.worst': 'Pire performer',
         'stats.recommendations': 'Recommandations',
-        'stats.noRecommendations': 'Aucune recommandation pour le moment.'
+        'stats.noRecommendations': 'Aucune recommandation pour le moment.',
+        'stats.history': 'Historique du portefeuille',
+        'stats.categoryPL': 'P/L par catégorie',
+        'stats.topPositions': 'Top positions',
+        'stats.realizedGains': 'Gains réalisés',
+        'stats.noSells': 'Aucune position vendue.',
+        'stats.totalRealized': 'Total réalisé'
       },
       en: {
         'nav.dashboard': 'Dashboard',
@@ -274,7 +300,7 @@ const appState = {
         'settings.saved': 'Settings saved',
         'add.title': 'Add Asset',
         'add.manual': 'Manual Add',
-        'add.import': 'Import Bourse Direct',
+        'add.import': 'Import',
         'add.wallet': 'Import Wallet',
         'add.type': 'Type',
         'add.search': 'Search asset',
@@ -313,6 +339,18 @@ const appState = {
         'add.historyIgnored': 'ignored',
         'add.historyErrors': 'errors',
         'add.historyShowIgnored': 'Show ignored assets',
+        'add.successToast': 'Transaction successfully added',
+        'add.csvImportTitle': 'Portfolio Tracker CSV Import',
+        'add.csvImportDesc': 'Import transactions from a CSV file exported from Portfolio Tracker.',
+        'add.csvFile': 'CSV file',
+        'add.csvImportButton': 'Import CSV',
+        'add.csvImportReading': 'Reading file...',
+        'add.csvImportEmpty': 'Empty or invalid file',
+        'add.csvImportDone': 'Import complete',
+        'add.csvImportTransactions': 'transactions imported',
+        'add.csvImportErrors': 'Errors',
+        'add.csvImportPortfolioNotFound': 'portfolio not found',
+        'add.csvImportInvalidRow': 'invalid data',
         'confirm.deleteWallet': 'Delete wallet',
         'confirm.deleteWalletMsg': 'Are you sure you want to delete this wallet?',
         'confirm.deleteTransaction': 'Delete transaction',
@@ -323,6 +361,7 @@ const appState = {
         'confirm.confirm': 'Confirm',
         'edit.position': 'Edit position',
         'edit.transaction': 'Edit transaction',
+        'edit.portfolio': 'Portfolio',
         'edit.quantity': 'Quantity',
         'edit.avgPrice': 'Average price',
         'edit.type': 'Type',
@@ -353,6 +392,13 @@ const appState = {
         'settings.edit': 'Edit',
         'settings.deletePortfolio': 'Delete',
         'settings.deleteConfirm': 'Delete this portfolio and all its positions?',
+        'settings.exportTitle': 'CSV Export',
+        'settings.exportDesc': 'Select the portfolios to export. The CSV file will include all associated transactions.',
+        'settings.exportSelectAll': 'Select all',
+        'settings.exportDeselectAll': 'Deselect all',
+        'settings.exportBtn': 'Download CSV',
+        'settings.exportEmpty': 'Select at least one portfolio',
+        'settings.exportFilename': 'transactions',
         'settings.maintenance': 'Maintenance',
         'settings.resync': 'Resynchronize holdings',
         'settings.resyncDesc': 'Recalculates all holdings from transactions. Use this if you notice calculation errors.',
@@ -366,7 +412,13 @@ const appState = {
         'stats.best': 'Best Performer',
         'stats.worst': 'Worst Performer',
         'stats.recommendations': 'Recommendations',
-        'stats.noRecommendations': 'No recommendations at the moment.'
+        'stats.noRecommendations': 'No recommendations at the moment.',
+        'stats.history': 'Portfolio History',
+        'stats.categoryPL': 'P/L by Category',
+        'stats.topPositions': 'Top Positions',
+        'stats.realizedGains': 'Realized Gains',
+        'stats.noSells': 'No sold positions.',
+        'stats.totalRealized': 'Total Realized'
       }
     };
     return translations[this.language]?.[key] || key;
@@ -384,6 +436,9 @@ const appState = {
       CNY: '¥' 
     };
     const symbol = symbols[this.currency] || this.currency;
-    return `${symbol}${value.toFixed(decimals)}`;
+    const [intPart, decPart] = value.toFixed(decimals).split('.');
+    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+    const formatted = decimals > 0 ? `${grouped}.${decPart}` : grouped;
+    return `${symbol}${formatted}`;
   }
 };

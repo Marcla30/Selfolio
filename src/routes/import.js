@@ -159,4 +159,17 @@ router.get('/import-history', async (req, res) => {
   }
 });
 
+router.post('/import-history', async (req, res) => {
+  try {
+    const { fileName, totalRows, successCount, ignoredCount, errorCount, ignoredAssets, errors } = req.body;
+    await prisma.$executeRaw`
+      INSERT INTO "ImportHistory" (id, "portfolioId", "fileName", "totalRows", "successCount", "ignoredCount", "errorCount", "ignoredAssets", errors, "createdAt")
+      VALUES (gen_random_uuid(), 'csv', ${fileName}, ${totalRows}, ${successCount}, ${ignoredCount}, ${errorCount}, ${JSON.stringify(ignoredAssets || [])}::jsonb, ${JSON.stringify(errors || [])}::jsonb, NOW())
+    `;
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

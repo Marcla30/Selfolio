@@ -6,8 +6,21 @@ const prisma = new PrismaClient();
 router.get('/', async (req, res) => {
   try {
     const { portfolioId, timeframe = '30d', currency = 'EUR' } = req.query;
-    
-    const where = portfolioId ? { portfolioId } : {};
+
+    const userPortfolios = await prisma.portfolio.findMany({
+      where: { userId: req.session.userId },
+      select: { id: true }
+    });
+    const portfolioIds = userPortfolios.map(p => p.id);
+
+    let where = { portfolioId: { in: portfolioIds } };
+    if (portfolioId) {
+      if (!portfolioIds.includes(portfolioId)) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+      where = { portfolioId };
+    }
+
     const transactions = await prisma.transaction.findMany({
       where,
       include: { asset: true },

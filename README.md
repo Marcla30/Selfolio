@@ -46,9 +46,9 @@ npm run dev
 
 ```
 /src
-  /controllers  - Express route handlers
-  /routes       - API routes
+  /routes       - API route handlers
   /services     - Business logic
+  /middleware   - Auth and other middleware
   /jobs         - Cron jobs
 /public
   /controllers  - Frontend controllers

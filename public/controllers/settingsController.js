@@ -73,6 +73,17 @@ const settingsController = {
         <div id="portfoliosList"></div>
       </div>
 
+      <div class="card">
+        <h2>${appState.t('settings.exportTitle')}</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">${appState.t('settings.exportDesc')}</p>
+        <div id="exportPortfoliosList"></div>
+        <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap; align-items: center;">
+          <button type="button" id="exportSelectAll" style="background: var(--bg-tertiary);">${appState.t('settings.exportSelectAll')}</button>
+          <button type="button" id="exportDeselectAll" style="background: var(--bg-tertiary);">${appState.t('settings.exportDeselectAll')}</button>
+          <button type="button" id="exportBtn" style="margin-left: auto;">${appState.t('settings.exportBtn')}</button>
+        </div>
+      </div>
+
       <div id="editPortfolioModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; padding: 1rem; overflow-y: auto;">
         <div style="position: relative; max-width: 500px; margin: 2rem auto; background: var(--bg-secondary); padding: 2rem; border-radius: 12px; border: 1px solid var(--border);">
           <h3 style="margin-bottom: 1.5rem;">${appState.t('settings.editPortfolio')}</h3>
@@ -104,6 +115,7 @@ const settingsController = {
 
     this.setupEventListeners();
     this.loadPortfolios();
+    this.loadExportSection();
   },
 
   setupEventListeners() {
@@ -156,6 +168,16 @@ const settingsController = {
         alert('Erreur: ' + error.message);
       }
     });
+
+    document.getElementById('exportSelectAll').addEventListener('click', () => {
+      document.querySelectorAll('#exportPortfoliosList input[type="checkbox"]').forEach(cb => cb.checked = true);
+    });
+
+    document.getElementById('exportDeselectAll').addEventListener('click', () => {
+      document.querySelectorAll('#exportPortfoliosList input[type="checkbox"]').forEach(cb => cb.checked = false);
+    });
+
+    document.getElementById('exportBtn').addEventListener('click', () => this.exportCSV());
   },
 
   async loadPortfolios() {
@@ -209,6 +231,89 @@ const settingsController = {
     if (await appState.showConfirm('Supprimer le portefeuille', appState.t('settings.deleteConfirm'))) {
       await api.portfolios.delete(id);
       this.loadPortfolios();
+    }
+  },
+
+  async loadExportSection() {
+    const portfolios = await api.portfolios.getAll();
+    const div = document.getElementById('exportPortfoliosList');
+
+    if (portfolios.length === 0) {
+      div.innerHTML = `<p style="color: var(--text-secondary);">${appState.t('settings.noPortfolios')}</p>`;
+      return;
+    }
+
+    div.innerHTML = portfolios.map(p => `
+      <label style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; cursor: pointer; border-bottom: 1px solid var(--border);">
+        <input type="checkbox" data-portfolio-id="${p.id}" data-portfolio-name="${p.name.replace(/"/g, '&quot;')}" checked
+               style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0;">
+        <span>
+          <strong>${p.name}</strong>
+          ${p.type ? `<span style="color: var(--text-secondary); font-size: 0.85em;"> (${p.type})</span>` : ''}
+          <span style="color: var(--text-secondary); font-size: 0.85em;"> — ${p._count?.holdings || 0} position${p._count?.holdings !== 1 ? 's' : ''}</span>
+        </span>
+      </label>
+    `).join('');
+  },
+
+  async exportCSV() {
+    const checkboxes = document.querySelectorAll('#exportPortfoliosList input[type="checkbox"]:checked');
+    if (checkboxes.length === 0) {
+      appState.showToast(appState.t('settings.exportEmpty'));
+      return;
+    }
+
+    const selectedPortfolios = Array.from(checkboxes).map(cb => ({
+      id: cb.dataset.portfolioId,
+      name: cb.dataset.portfolioName
+    }));
+
+    try {
+      const allTransactions = [];
+      for (const portfolio of selectedPortfolios) {
+        const res = await fetch(`/api/transactions?portfolioId=${encodeURIComponent(portfolio.id)}`);
+        const transactions = await res.json();
+        allTransactions.push(...transactions);
+      }
+
+      if (allTransactions.length === 0) {
+        appState.showToast(appState.language === 'fr' ? 'Aucune transaction à exporter' : 'No transactions to export');
+        return;
+      }
+
+      const esc = (val) => `"${String(val ?? '').replace(/"/g, '""')}"`;
+
+      const headers = appState.language === 'fr'
+        ? ['Portefeuille', 'Actif', 'Symbole', 'Type d\'actif', 'Type de transaction', 'Date', 'Quantité', 'Prix unitaire', 'Frais', 'Total', 'Devise']
+        : ['Portfolio', 'Asset', 'Symbol', 'Asset type', 'Transaction type', 'Date', 'Quantity', 'Price per unit', 'Fees', 'Total', 'Currency'];
+
+      const rows = allTransactions.map(tx => [
+        esc(tx.portfolio?.name),
+        esc(tx.asset?.name),
+        esc(tx.asset?.symbol),
+        esc(tx.asset?.type),
+        esc(tx.type),
+        esc(new Date(tx.date).toISOString().replace('T', ' ').slice(0, 16)),
+        tx.quantity,
+        tx.pricePerUnit,
+        tx.fees ?? 0,
+        (parseFloat(tx.quantity) * parseFloat(tx.pricePerUnit) + parseFloat(tx.fees ?? 0)).toFixed(2),
+        esc(tx.currency ?? appState.currency)
+      ]);
+
+      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const date = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `${appState.t('settings.exportFilename')}_${date}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      alert('Erreur export: ' + error.message);
     }
   }
 };

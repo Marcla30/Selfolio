@@ -1,10 +1,10 @@
 const cron = require('node-cron');
 const { PrismaClient } = require('@prisma/client');
-const { getCurrentPrice } = require('../services/priceService');
+const { getCurrentPrice, prefetchCryptoPrices } = require('../services/priceService');
 const prisma = new PrismaClient();
 
 async function saveDailyPrices() {
-  console.log('Starting daily price snapshot...');
+  console.log('Starting price snapshot...');
   
   try {
     // Get all unique assets from holdings and recent transactions
@@ -20,55 +20,47 @@ async function saveDailyPrices() {
     const settings = await prisma.settings.findFirst();
     const currency = settings?.defaultCurrency || 'EUR';
 
+    // Batch-fetch all crypto prices in one request before the loop
+    await prefetchCryptoPrices(assets, currency);
+
     let saved = 0;
     for (const asset of assets) {
       try {
-        const price = await getCurrentPrice(asset, currency);
-        
-        if (price > 0) {
-          await prisma.priceCache.create({
-            data: {
-              assetId: asset.id,
-              price,
-              currency,
-              timestamp: new Date()
-            }
-          });
-          saved++;
-        }
+        // force=true bypasses the 5-min cache so we always get a fresh price
+        const price = await getCurrentPrice(asset, currency, true);
+        if (price > 0) saved++;
       } catch (error) {
         console.error(`Error saving price for ${asset.symbol}:`, error.message);
       }
     }
 
-    console.log(`Daily price snapshot completed: ${saved}/${assets.length} prices saved`);
+    console.log(`Price snapshot completed: ${saved}/${assets.length} prices saved`);
   } catch (error) {
-    console.error('Daily price snapshot error:', error);
+    console.error('Price snapshot error:', error);
   }
 }
 
 function startDailyPriceJob() {
-  // Run every day at 00:00
-  cron.schedule('0 0 * * *', saveDailyPrices);
-  console.log('Daily price snapshot job scheduled (00:00)');
-  
-  // Run immediately on startup if no prices saved today
+  // Run every hour
+  cron.schedule('0 * * * *', saveDailyPrices);
+  console.log('Price snapshot job scheduled (every hour)');
+
+  // Run immediately on startup if no prices saved in last hour
   checkAndRunInitial();
 }
 
 async function checkAndRunInitial() {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const todayPrices = await prisma.priceCache.count({
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+    const recentPrices = await prisma.priceCache.count({
       where: {
-        timestamp: { gte: today }
+        timestamp: { gte: oneHourAgo }
       }
     });
     
-    if (todayPrices === 0) {
-      console.log('No prices saved today, running initial snapshot...');
+    if (recentPrices === 0) {
+      console.log('No prices saved in last 2 hours, running initial snapshot...');
       await saveDailyPrices();
     }
   } catch (error) {

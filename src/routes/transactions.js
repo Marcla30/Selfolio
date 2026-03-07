@@ -4,10 +4,25 @@ const { getHistoricalPrice } = require('../services/historicalPriceService');
 const router = express.Router();
 const prisma = new PrismaClient();
 
+async function getUserPortfolioIds(userId) {
+  const portfolios = await prisma.portfolio.findMany({
+    where: { userId },
+    select: { id: true }
+  });
+  return portfolios.map(p => p.id);
+}
+
 router.get('/', async (req, res) => {
   try {
-    const where = {};
-    if (req.query.portfolioId) where.portfolioId = req.query.portfolioId;
+    const portfolioIds = await getUserPortfolioIds(req.session.userId);
+
+    const where = { portfolioId: { in: portfolioIds } };
+    if (req.query.portfolioId) {
+      if (!portfolioIds.includes(req.query.portfolioId)) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+      where.portfolioId = req.query.portfolioId;
+    }
     if (req.query.assetId) where.assetId = req.query.assetId;
 
     const transactions = await prisma.transaction.findMany({
@@ -23,8 +38,13 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
+    const portfolioIds = await getUserPortfolioIds(req.session.userId);
     const { portfolioId, assetId, type, quantity, date, fees, currency } = req.body;
-    
+
+    if (!portfolioIds.includes(portfolioId)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
     const asset = await prisma.asset.findUnique({ where: { id: assetId } });
     let pricePerUnit = req.body.pricePerUnit;
 
@@ -46,6 +66,13 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
+    const portfolioIds = await getUserPortfolioIds(req.session.userId);
+
+    const existing = await prisma.transaction.findUnique({ where: { id: req.params.id } });
+    if (!existing || !portfolioIds.includes(existing.portfolioId)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
     const { type, quantity, pricePerUnit, fees, date } = req.body;
     const transaction = await prisma.transaction.update({
       where: { id: req.params.id },
@@ -59,6 +86,13 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
+    const portfolioIds = await getUserPortfolioIds(req.session.userId);
+
+    const existing = await prisma.transaction.findUnique({ where: { id: req.params.id } });
+    if (!existing || !portfolioIds.includes(existing.portfolioId)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
     await prisma.transaction.delete({ where: { id: req.params.id } });
     res.json({ success: true });
   } catch (error) {

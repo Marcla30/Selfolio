@@ -2,21 +2,26 @@ const axios = require('axios');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const CACHE_DURATION = 5 * 60 * 1000;
+const CACHE_DURATION = 65 * 60 * 1000; // 65 min — slightly more than the hourly snapshot interval
+// Per-coin in-memory cache: cacheKey -> { price, fetchedAt }
+const cryptoPriceCache = new Map();
 
-async function getCurrentPrice(asset, currency = 'EUR') {
-  const cached = await prisma.priceCache.findFirst({
-    where: {
-      assetId: asset.id,
-      currency,
-      timestamp: { gte: new Date(Date.now() - CACHE_DURATION) }
-    },
-    orderBy: { timestamp: 'desc' }
-  });
+async function getCurrentPrice(asset, currency = 'EUR', force = false) {
+  if (!force) {
+    const cached = await prisma.priceCache.findFirst({
+      where: {
+        assetId: asset.id,
+        currency,
+        timestamp: { gte: new Date(Date.now() - CACHE_DURATION) },
+        price: { gt: 0 }
+      },
+      orderBy: { timestamp: 'desc' }
+    });
 
-  if (cached) {
-    console.log(`Cache hit for ${asset.symbol} in ${currency}: ${cached.price}`);
-    return parseFloat(cached.price);
+    if (cached) {
+      console.log(`Cache hit for ${asset.symbol} in ${currency}: ${cached.price}`);
+      return parseFloat(cached.price);
+    }
   }
 
   console.log(`Fetching price for ${asset.symbol} in ${currency}`);
@@ -39,24 +44,96 @@ async function getCurrentPrice(asset, currency = 'EUR') {
       price = 0;
   }
 
-  await prisma.priceCache.create({
-    data: { assetId: asset.id, price, currency }
-  });
+  if (price > 0) {
+    await prisma.priceCache.create({
+      data: { assetId: asset.id, price, currency }
+    });
+    console.log(`Cached price for ${asset.symbol} in ${currency}: ${price}`);
+  }
 
-  console.log(`Cached price for ${asset.symbol} in ${currency}: ${price}`);
   return price;
 }
 
 async function getCryptoPrice(symbol, currency = 'EUR') {
   try {
     const coinId = getCoinGeckoId(symbol);
+    const cacheKey = `${coinId}-${currency}`;
+    const now = Date.now();
+
+    // Per-coin in-memory cache (5 min TTL)
+    const cached = cryptoPriceCache.get(cacheKey);
+    if (cached && (now - cached.fetchedAt) < CACHE_DURATION) {
+      console.log(`Memory cache hit for ${symbol}`);
+      return cached.price;
+    }
+
+    // Fetch price (single coin fallback — prefer using prefetchCryptoPrices for batching)
     const response = await axios.get(`https://api.coingecko.com/api/v3/simple/price`, {
-      params: { ids: coinId, vs_currencies: currency.toLowerCase() }
+      params: { ids: coinId, vs_currencies: currency.toLowerCase() },
+      timeout: 10000
     });
-    return response.data[coinId]?.[currency.toLowerCase()] || 0;
+    const price = response.data[coinId]?.[currency.toLowerCase()] || 0;
+
+    if (price > 0) {
+      cryptoPriceCache.set(cacheKey, { price, fetchedAt: now });
+    }
+
+    console.log(`Fetched ${symbol} (${coinId}) price: ${price} ${currency}`);
+    return price;
   } catch (error) {
+    if (error.response?.status === 429) {
+      console.error(`Rate limit hit for ${symbol}, using fallback...`);
+      const coinId = getCoinGeckoId(symbol);
+      const cacheKey = `${coinId}-${currency}`;
+      const cached = cryptoPriceCache.get(cacheKey);
+      if (cached) {
+        console.log(`Using expired cache for ${symbol}: ${cached.price}`);
+        return cached.price;
+      }
+    }
     console.error(`Error fetching crypto price for ${symbol}:`, error.message);
     return 0;
+  }
+}
+
+// Batch-fetch all crypto prices in ONE CoinGecko request — prevents rate limiting.
+// Only calls CoinGecko if DB cache is stale (no fresh prices found).
+async function prefetchCryptoPrices(assets, currency = 'EUR') {
+  const cryptoAssets = assets.filter(a => a.type === 'crypto');
+  if (!cryptoAssets.length) return;
+
+  // Check how many cryptos already have a fresh DB cache entry
+  const assetIds = cryptoAssets.map(a => a.id).filter(Boolean);
+  const cutoff = new Date(Date.now() - CACHE_DURATION);
+  const freshCount = assetIds.length > 0 ? await prisma.priceCache.count({
+    where: { assetId: { in: assetIds }, currency, timestamp: { gte: cutoff }, price: { gt: 0 } }
+  }) : 0;
+
+  // All cryptos have fresh DB cache — no need to hit CoinGecko
+  if (freshCount >= cryptoAssets.length) return;
+
+  // Some or all are stale — batch fetch from CoinGecko (1 request for all)
+  const symbols = [...new Set(cryptoAssets.map(a => a.symbol.toUpperCase()))];
+  const coinIds = symbols.map(s => getCoinGeckoId(s));
+
+  try {
+    const response = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
+      params: { ids: coinIds.join(','), vs_currencies: currency.toLowerCase() },
+      timeout: 15000
+    });
+    const now = Date.now();
+    let count = 0;
+    symbols.forEach((sym, i) => {
+      const coinId = coinIds[i];
+      const price = response.data[coinId]?.[currency.toLowerCase()] || 0;
+      if (price > 0) {
+        cryptoPriceCache.set(`${coinId}-${currency}`, { price, fetchedAt: now });
+        count++;
+      }
+    });
+    console.log(`Batch crypto fetch: ${count}/${symbols.length} prices loaded (${currency})`);
+  } catch (error) {
+    console.error('Batch crypto prefetch error:', error.message);
   }
 }
 
@@ -218,7 +295,8 @@ const coinGeckoMap = {
   'MATIC': 'matic-network',
   'DOT': 'polkadot',
   'ATOM': 'cosmos',
-  'CRO': 'crypto-com-chain'
+  'CRO': 'crypto-com-chain',
+  'LTC': 'litecoin'
 };
 
 function getCoinGeckoId(symbol) {
@@ -227,6 +305,7 @@ function getCoinGeckoId(symbol) {
 
 module.exports = {
   getCurrentPrice,
+  prefetchCryptoPrices,
   getHistoricalPrice,
   getExchangeRate
 };

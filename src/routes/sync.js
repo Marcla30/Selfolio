@@ -5,20 +5,26 @@ const prisma = new PrismaClient();
 
 router.post('/sync', async (req, res) => {
   try {
-    // Get all transactions
+    const userPortfolios = await prisma.portfolio.findMany({
+      where: { userId: req.session.userId },
+      select: { id: true }
+    });
+    const portfolioIds = userPortfolios.map(p => p.id);
+
     const transactions = await prisma.transaction.findMany({
+      where: { portfolioId: { in: portfolioIds } },
       orderBy: { date: 'asc' }
     });
 
-    // Delete all holdings
-    await prisma.holding.deleteMany();
+    await prisma.holding.deleteMany({
+      where: { portfolioId: { in: portfolioIds } }
+    });
 
-    // Recalculate holdings from transactions
     const holdingsMap = new Map();
 
     for (const tx of transactions) {
       const key = `${tx.portfolioId}-${tx.assetId}`;
-      
+
       if (!holdingsMap.has(key)) {
         holdingsMap.set(key, {
           portfolioId: tx.portfolioId,
@@ -38,8 +44,6 @@ router.post('/sync', async (req, res) => {
         holding.totalCost = newTotalCost;
         holding.avgPrice = newTotalCost / newQuantity;
       } else if (tx.type === 'sell') {
-        // When selling, reduce quantity but keep the same average price
-        // Only sell if we have something to sell
         if (holding.quantity > 0 && holding.avgPrice > 0) {
           const soldCost = parseFloat(tx.quantity) * holding.avgPrice;
           holding.quantity -= parseFloat(tx.quantity);
@@ -48,8 +52,7 @@ router.post('/sync', async (req, res) => {
       }
     }
 
-    // Create new holdings
-    for (const [key, data] of holdingsMap) {
+    for (const [, data] of holdingsMap) {
       if (data.quantity > 0) {
         await prisma.holding.create({
           data: {

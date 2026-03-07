@@ -71,10 +71,36 @@ body {
   background: rgba(74, 158, 255, 0.1);
 }
 
+.nav-logout {
+  margin-left: auto;
+  padding: 0.5rem 1rem;
+  background: var(--danger);
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
 #app {
   max-width: 1400px;
-  margin: 2rem auto;
-  padding: 0 2rem;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 2rem;
+}
+
+.login-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--bg-primary);
+  padding: 1rem;
+}
+
+.login-card {
+  max-width: 400px;
+  width: 100%;
 }
 
 .card {
@@ -88,15 +114,19 @@ body {
 
 .header-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
+  align-items: stretch;
 }
 
 .stat-card {
   background: var(--bg-tertiary);
   padding: 1.5rem;
   border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .stat-label {
@@ -108,6 +138,13 @@ body {
 .stat-value {
   font-size: 2rem;
   font-weight: bold;
+  line-height: 1.1;
+}
+
+.stat-sublabel {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-top: 0.3rem;
 }
 
 .positive { color: var(--success); }
@@ -144,7 +181,7 @@ button:hover {
   opacity: 0.8;
 }
 
-input, select {
+input:not([type="checkbox"]):not([type="radio"]), select {
   background: var(--bg-tertiary);
   border: 1px solid var(--border);
   color: var(--text-primary);
@@ -340,6 +377,10 @@ table button {
   display: none;
 }
 
+.mobile-overlay {
+  display: none;
+}
+
 .tab-selector,
 .tab-dropdown,
 .timeframe-selector,
@@ -383,6 +424,19 @@ table button {
     margin-left: 0;
     padding: 1rem;
     border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logout {
+    margin-left: 0;
+    width: 100%;
+    padding: 1rem;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    color: var(--danger);
+    text-align: left;
+    font-size: 1rem;
   }
 
   .mobile-overlay {
@@ -436,6 +490,40 @@ table button {
     margin: 0;
   }
 
+  body.login-page {
+    overflow: hidden;
+    height: 100dvh;
+  }
+
+  body.login-page #app {
+    padding: 0;
+    height: 100dvh;
+    max-width: 100%;
+    display: flex;
+  }
+
+  .login-wrapper {
+    padding: 0;
+    flex: 1;
+    min-height: unset;
+    height: 100%;
+    align-items: stretch;
+  }
+
+  .login-card {
+    border-radius: 0;
+    flex: 1;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow-y: auto;
+    background: transparent;
+    box-shadow: none;
+    border: none;
+    margin-bottom: 0;
+  }
+
   .header-stats {
     grid-template-columns: 1fr;
     gap: 0.75rem;
@@ -446,6 +534,10 @@ table button {
     display: flex;
     justify-content: space-between;
     align-items: center;
+  }
+
+  .stat-sublabel {
+    display: none;
   }
 
   .stat-label {

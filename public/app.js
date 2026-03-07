@@ -59,12 +59,41 @@ function setupMobileMenu() {
 }
 
 function updateNavbar() {
+  const navbar = document.getElementById('navbar');
+  const menuBtn = document.getElementById('mobileMenuBtn');
+  
+  if (!navbar || location.pathname === '/login') {
+    if (navbar) navbar.style.display = 'none';
+    if (menuBtn) menuBtn.style.display = 'none';
+    return;
+  }
+  
+  navbar.style.display = 'flex';
+  if (menuBtn && window.innerWidth <= 768) menuBtn.style.display = 'flex';
+  
   const links = document.querySelectorAll('#navLinks a');
   links[0].textContent = appState.t('nav.dashboard');
   links[1].textContent = appState.t('nav.positions');
   links[2].textContent = appState.t('nav.stats');
   links[3].textContent = appState.t('nav.add');
   links[4].textContent = appState.t('nav.settings');
+  
+  // Add logout button if not exists
+  if (!document.getElementById('logoutBtn')) {
+    const logoutBtn = document.createElement('button');
+    logoutBtn.id = 'logoutBtn';
+    logoutBtn.textContent = 'Logout';
+    logoutBtn.className = 'nav-logout';
+    logoutBtn.onclick = async () => {
+      document.getElementById('navbar')?.classList.remove('open');
+      document.getElementById('mobileOverlay')?.classList.remove('active');
+      document.getElementById('mobileMenuBtn')?.classList.remove('hidden');
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      localStorage.removeItem('user');
+      navigate('/login');
+    };
+    document.querySelector('.nav-links').appendChild(logoutBtn);
+  }
   
   const currentPath = window.location.pathname;
   links.forEach(link => {

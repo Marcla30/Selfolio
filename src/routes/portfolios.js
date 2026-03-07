@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 router.get('/', async (req, res) => {
   try {
     const portfolios = await prisma.portfolio.findMany({
+      where: { userId: req.session.userId },
       include: { _count: { select: { holdings: true } } }
     });
     res.json(portfolios);
@@ -17,7 +18,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const portfolio = await prisma.portfolio.create({
-      data: req.body
+      data: { ...req.body, userId: req.session.userId }
     });
     res.json(portfolio);
   } catch (error) {
@@ -27,6 +28,10 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
+    const existing = await prisma.portfolio.findUnique({ where: { id: req.params.id } });
+    if (!existing || existing.userId !== req.session.userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
     const portfolio = await prisma.portfolio.update({
       where: { id: req.params.id },
       data: req.body
@@ -39,6 +44,10 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
+    const existing = await prisma.portfolio.findUnique({ where: { id: req.params.id } });
+    if (!existing || existing.userId !== req.session.userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
     await prisma.portfolio.delete({ where: { id: req.params.id } });
     res.json({ success: true });
   } catch (error) {

@@ -60,7 +60,13 @@ const api = {
 
   stats: {
     get: (portfolioId, currency) => api.get(`/stats?portfolioId=${portfolioId || ''}&currency=${currency || 'EUR'}`),
-    getRecommendations: (portfolioId) => api.get(`/stats/recommendations?portfolioId=${portfolioId || ''}`)
+    getRecommendations: (portfolioId) => api.get(`/stats/recommendations?portfolioId=${portfolioId || ''}`),
+    getRealizedGains: (portfolioId) => api.get(`/stats/realized-gains?portfolioId=${portfolioId || ''}`),
+    getChange24h: (currency) => api.get(`/stats/change24h?currency=${currency || 'EUR'}`)
+  },
+
+  history: {
+    get: (portfolioId, timeframe, currency) => api.get(`/history?portfolioId=${portfolioId || ''}&timeframe=${timeframe || '30d'}&currency=${currency || 'EUR'}`)
   },
 
   settings: {

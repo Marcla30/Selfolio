@@ -7,12 +7,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id          String    @id @default(uuid())
+  username    String    @unique
+  password    String
+  email       String?
+  name        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  portfolios  Portfolio[]
+  settings    Settings?
+}
+
 model Portfolio {
   id          String    @id @default(uuid())
+  userId      String
   name        String
   type        String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   holdings    Holding[]
   transactions Transaction[] @relation("PortfolioTransactions")
   wallets     WalletAddress[]
@@ -126,6 +140,7 @@ model PriceCache {
 
 model Settings {
   id                    String   @id @default(uuid())
+  userId                String   @unique
   defaultCurrency       String   @default("EUR")
   language              String   @default("fr")
   theme                 String   @default("blue")
@@ -137,6 +152,7 @@ model Settings {
   pushSubscriptions     Json?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ImportHistory {

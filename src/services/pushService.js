@@ -3,14 +3,26 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function initializeVapidKeys() {
+  // Skip initialization if no users exist yet
+  const userCount = await prisma.user.count();
+  if (userCount === 0) {
+    console.log('No users yet, skipping VAPID initialization');
+    return null;
+  }
+  
   let settings = await prisma.settings.findFirst();
   
   if (!settings || !settings.vapidPublicKey || !settings.vapidPrivateKey) {
     const vapidKeys = webpush.generateVAPIDKeys();
     
     if (!settings) {
+      // Get first user to create settings
+      const firstUser = await prisma.user.findFirst();
+      if (!firstUser) return null;
+      
       settings = await prisma.settings.create({
         data: {
+          userId: firstUser.id,
           vapidPublicKey: vapidKeys.publicKey,
           vapidPrivateKey: vapidKeys.privateKey
         }
@@ -26,11 +38,13 @@ async function initializeVapidKeys() {
     }
   }
   
-  webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT || 'mailto:admin@portfoliotracker.com',
-    settings.vapidPublicKey,
-    settings.vapidPrivateKey
-  );
+  if (settings) {
+    webpush.setVapidDetails(
+      process.env.VAPID_SUBJECT || 'mailto:admin@portfoliotracker.com',
+      settings.vapidPublicKey,
+      settings.vapidPrivateKey
+    );
+  }
   
   return settings;
 }
