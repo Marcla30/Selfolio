@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const cors = require('cors');
 const path = require('path');
 const { initializeVapidKeys } = require('./services/pushService');
@@ -14,10 +15,15 @@ const PORT = process.env.PORT || 3000;
 app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 app.use(session({
+  store: new pgSession({
+    conString: process.env.DATABASE_URL,
+    tableName: 'Session',
+    createTableIfMissing: true
+  }),
   secret: process.env.SESSION_SECRET || 'portfolio-tracker-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
-  cookie: { 
+  cookie: {
     secure: false,
     httpOnly: true,
     maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
