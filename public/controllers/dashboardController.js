@@ -1,5 +1,5 @@
 const dashboardController = {
-  currentTimeframe: '30d',
+  currentTimeframe: '24h',
   chartInstance: null,
   filterType: 'all',
   sortBy: 'value',
@@ -389,6 +389,17 @@ const dashboardController = {
     const chartCanvas = document.getElementById('portfolioChart');
     if (chartCanvas) {
       chartCanvas.addEventListener('mouseleave', () => {
+        const tooltip = document.getElementById('customTooltip');
+        if (tooltip) tooltip.style.display = 'none';
+      });
+
+      // Prevent the page from scrolling horizontally when scrubbing the chart on mobile
+      chartCanvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+      }, { passive: false });
+
+      // Hide tooltip on touch end
+      chartCanvas.addEventListener('touchend', () => {
         const tooltip = document.getElementById('customTooltip');
         if (tooltip) tooltip.style.display = 'none';
       });

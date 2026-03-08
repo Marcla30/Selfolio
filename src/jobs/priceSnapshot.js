@@ -41,26 +41,26 @@ async function saveDailyPrices() {
 }
 
 function startDailyPriceJob() {
-  // Run every hour
-  cron.schedule('0 * * * *', saveDailyPrices);
-  console.log('Price snapshot job scheduled (every hour)');
+  // Run every 30 minutes
+  cron.schedule('*/30 * * * *', saveDailyPrices);
+  console.log('Price snapshot job scheduled (every 30 minutes)');
 
-  // Run immediately on startup if no prices saved in last hour
+  // Run immediately on startup if no prices saved in last 30 minutes
   checkAndRunInitial();
 }
 
 async function checkAndRunInitial() {
   try {
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
 
     const recentPrices = await prisma.priceCache.count({
       where: {
-        timestamp: { gte: oneHourAgo }
+        timestamp: { gte: thirtyMinAgo }
       }
     });
-    
+
     if (recentPrices === 0) {
-      console.log('No prices saved in last 2 hours, running initial snapshot...');
+      console.log('No prices saved in last 30 minutes, running initial snapshot...');
       await saveDailyPrices();
     }
   } catch (error) {

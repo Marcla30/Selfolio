@@ -2,7 +2,7 @@ const axios = require('axios');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const CACHE_DURATION = 65 * 60 * 1000; // 65 min — slightly more than the hourly snapshot interval
+const CACHE_DURATION = 35 * 60 * 1000; // 35 min — slightly more than the 30-min snapshot interval
 // Per-coin in-memory cache: cacheKey -> { price, fetchedAt }
 const cryptoPriceCache = new Map();
 
@@ -49,6 +49,16 @@ async function getCurrentPrice(asset, currency = 'EUR', force = false) {
       data: { assetId: asset.id, price, currency }
     });
     console.log(`Cached price for ${asset.symbol} in ${currency}: ${price}`);
+  } else {
+    // API failed — fall back to the most recent cached price (even if stale)
+    const stale = await prisma.priceCache.findFirst({
+      where: { assetId: asset.id, currency, price: { gt: 0 } },
+      orderBy: { timestamp: 'desc' }
+    });
+    if (stale) {
+      console.warn(`Using stale cache for ${asset.symbol} (API returned 0): ${stale.price}`);
+      return parseFloat(stale.price);
+    }
   }
 
   return price;
