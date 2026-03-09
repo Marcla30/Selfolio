@@ -48,6 +48,7 @@ app.use('/api/history', requireAuth, require('./routes/history'));
 app.use('/api', requireAuth, require('./routes/sync'));
 app.use('/api', requireAuth, require('./routes/import'));
 app.use('/api', requireAuth, require('./routes/cache'));
+app.use('/api/cs2', requireAuth, require('./routes/cs2'));
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

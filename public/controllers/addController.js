@@ -127,6 +127,27 @@ const addController = {
             <div id="walletStatus" style="margin-top: 1rem; color: var(--text-secondary);"></div>
           </div>
 
+          <div style="padding-top: 2rem; margin-top: 2rem; border-top: 1px solid var(--border);">
+            <h3 style="margin-bottom: 0.5rem;">${appState.t('add.steam.title')}</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 1.25rem; font-size: 0.9rem;">${appState.t('add.steam.desc')}</p>
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+              <input type="text" id="steamUrlInput" placeholder="${appState.t('add.steam.urlPlaceholder')}" style="flex: 1;">
+              <button id="steamPreviewBtn" type="button">${appState.t('add.steam.preview')}</button>
+            </div>
+            <div id="steamPreviewResult" style="display: none;">
+              <p id="steamPreviewCount" style="color: var(--text-secondary); margin-bottom: 0.75rem; font-size: 0.9rem;"></p>
+              <div id="steamSkinsList" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; margin-bottom: 1rem;"></div>
+              <div class="form-group">
+                <label>${appState.t('add.portfolio')}</label>
+                <select id="steamPortfolioSelect">
+                  ${portfolios.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+                </select>
+              </div>
+              <button id="steamImportBtn" type="button">${appState.t('add.steam.importBtn')}</button>
+            </div>
+            <div id="steamStatus" style="margin-top: 1rem; color: var(--text-secondary);"></div>
+          </div>
+
           <div style="margin-top: 2rem;">
             <h3>${appState.t('add.importHistoryTitle')}</h3>
             <div id="importHistory"></div>
@@ -283,6 +304,9 @@ const addController = {
       e.preventDefault();
       this.importCSV();
     });
+
+    document.getElementById('steamPreviewBtn').addEventListener('click', () => this.steamPreview());
+    document.getElementById('steamImportBtn').addEventListener('click', () => this.steamImport());
 
     document.getElementById('importExcelForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -865,6 +889,96 @@ const addController = {
     }
 
     this.loadImportHistory();
+  },
+
+  async steamPreview() {
+    const url = document.getElementById('steamUrlInput').value.trim();
+    const status = document.getElementById('steamStatus');
+    const previewResult = document.getElementById('steamPreviewResult');
+
+    if (!url) {
+      status.textContent = appState.t('add.steam.errorNoUrl');
+      return;
+    }
+
+    status.textContent = appState.t('add.steam.loading');
+    previewResult.style.display = 'none';
+
+    try {
+      const data = await api.cs2.preview(url);
+
+      if (data.error) {
+        status.textContent = data.error;
+        return;
+      }
+
+      // Store steamId on the button for later use
+      document.getElementById('steamImportBtn').dataset.steamId = data.steamId;
+      document.getElementById('steamImportBtn').dataset.steamUrl = url;
+
+      document.getElementById('steamPreviewCount').textContent =
+        appState.language === 'fr'
+          ? `${data.count} skin(s) trouvé(s) dans l'inventaire CS2`
+          : `${data.count} skin(s) found in CS2 inventory`;
+
+      document.getElementById('steamSkinsList').innerHTML = data.skins.map(s => `
+        <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0; border-bottom: 1px solid var(--border);">
+          ${s.iconUrl ? `<img src="${s.iconUrl}" style="width: 32px; height: 32px; object-fit: contain;" onerror="this.style.display='none'">` : ''}
+          <span style="flex: 1; font-size: 0.85rem;">${s.marketHashName}</span>
+          <span style="color: var(--text-secondary); font-size: 0.85rem;">×${s.count}</span>
+        </div>
+      `).join('');
+
+      previewResult.style.display = 'block';
+      status.textContent = '';
+    } catch (error) {
+      status.textContent = appState.t('add.steam.errorFetch') + ': ' + error.message;
+    }
+  },
+
+  async steamImport() {
+    const btn = document.getElementById('steamImportBtn');
+    const status = document.getElementById('steamStatus');
+    const steamId = btn.dataset.steamId;
+    const steamUrl = btn.dataset.steamUrl;
+    const portfolioId = document.getElementById('steamPortfolioSelect').value;
+
+    if (!steamId || !portfolioId) return;
+
+    status.textContent = appState.t('add.steam.importing');
+    btn.disabled = true;
+
+    try {
+      const result = await api.cs2.import({ steamId, steamUrl, portfolioId });
+
+      if (result.error) {
+        status.style.color = 'var(--danger)';
+        status.textContent = result.error;
+        btn.disabled = false;
+        return;
+      }
+
+      const lang = appState.language === 'fr';
+      if (result.skipped > 0 && result.imported === 0) {
+        status.style.color = 'var(--warning)';
+        status.textContent = lang
+          ? `${result.skipped} skin(s) déjà importé(s) — aucun doublon ajouté`
+          : `${result.skipped} skin(s) already imported — no duplicates added`;
+      } else {
+        status.style.color = 'var(--success)';
+        status.textContent = lang
+          ? `${result.imported} skin(s) importé(s)${result.skipped > 0 ? `, ${result.skipped} ignoré(s) (déjà présents)` : ''}`
+          : `${result.imported} skin(s) imported${result.skipped > 0 ? `, ${result.skipped} skipped (already present)` : ''}`;
+        if (result.imported > 0) {
+          setTimeout(() => navigate('/'), 2000);
+        }
+      }
+    } catch (error) {
+      status.style.color = 'var(--danger)';
+      status.textContent = appState.t('add.steam.errorFetch') + ': ' + error.message;
+    } finally {
+      btn.disabled = false;
+    }
   },
 
   switchTab(tab) {

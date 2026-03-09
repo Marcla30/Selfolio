@@ -60,6 +60,7 @@ const positionsController = {
               <option value="etf">${appState.t('add.typeEtf')}</option>
               <option value="metal">${appState.t('add.typeMetal')}</option>
               <option value="cash">${appState.t('add.typeCash')}</option>
+              <option value="cs2skin">${appState.t('add.typeCs2skin')}</option>
             </select>
             <select id="sortBy" style="width: auto;">
               <option value="name">${appState.t('positions.sortName')}</option>

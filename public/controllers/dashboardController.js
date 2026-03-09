@@ -103,6 +103,7 @@ const dashboardController = {
             <option value="etf">${appState.t('add.typeEtf')}</option>
             <option value="metal">${appState.t('add.typeMetal')}</option>
             <option value="cash">${appState.t('add.typeCash')}</option>
+            <option value="cs2skin">${appState.t('add.typeCs2skin')}</option>
           </select>
         </div>
         <table>

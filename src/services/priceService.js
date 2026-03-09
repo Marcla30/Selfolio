@@ -10,6 +10,8 @@ const metalPriceCache = new Map();
 // Exchange rate in-memory cache (30 min TTL — Frankfurter updates daily so this is fine)
 const exchangeRateCache = new Map();
 const EXCHANGE_RATE_TTL = 30 * 60 * 1000;
+// Per-skin CSFloat price cache (same TTL as other assets)
+const cs2SkinPriceCache = new Map();
 
 async function getCurrentPrice(asset, currency = 'EUR', force = false) {
   if (!force) {
@@ -44,6 +46,9 @@ async function getCurrentPrice(asset, currency = 'EUR', force = false) {
       break;
     case 'cash':
       price = await getExchangeRate(asset.symbol, currency);
+      break;
+    case 'cs2skin':
+      price = await getCS2SkinPrice(asset.symbol, currency);
       break;
     default:
       price = 0;
@@ -199,6 +204,43 @@ async function getMetalPrice(symbol, currency = 'EUR') {
     console.error(`Error fetching metal price for ${symbol}:`, error.message);
     if (cached) {
       console.warn(`Using expired memory cache for ${symbol}: ${cached.price}`);
+      return cached.price;
+    }
+    return 0;
+  }
+}
+
+async function getCS2SkinPrice(marketHashName, currency = 'EUR') {
+  const cacheKey = `${marketHashName}-${currency}`;
+  const now = Date.now();
+  const cached = cs2SkinPriceCache.get(cacheKey);
+  if (cached && (now - cached.fetchedAt) < CACHE_DURATION) return cached.price;
+
+  if (!process.env.CSFLOAT_API_KEY) {
+    console.warn('CSFLOAT_API_KEY not set — CS2 skin price = 0');
+    return 0;
+  }
+
+  try {
+    // Fetch current lowest listing from CSFloat — price is returned in cents (USD)
+    const res = await axios.get('https://csfloat.com/api/v1/listings', {
+      params: { market_hash_name: marketHashName, sort_by: 'price', order: 'asc', type: 0, limit: 1 },
+      headers: { Authorization: process.env.CSFLOAT_API_KEY },
+      timeout: 10000
+    });
+    const listing = res.data?.data?.[0];
+    if (!listing) return 0;
+
+    const priceUsd = listing.price / 100; // cents → USD
+    const rate = await getExchangeRate('USD', currency);
+    const price = priceUsd * rate;
+
+    if (price > 0) cs2SkinPriceCache.set(cacheKey, { price, fetchedAt: now });
+    return price;
+  } catch (error) {
+    console.error(`Error fetching CS2 skin price for "${marketHashName}":`, error.message);
+    if (cached) {
+      console.warn(`Using expired memory cache for "${marketHashName}": ${cached.price}`);
       return cached.price;
     }
     return 0;

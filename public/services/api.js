@@ -77,5 +77,10 @@ const api = {
   notifications: {
     getVapidKey: () => api.get('/notifications/vapid-public-key'),
     subscribe: (subscription) => api.post('/notifications/subscribe', subscription)
+  },
+
+  cs2: {
+    preview: (url) => api.get(`/cs2/preview?url=${encodeURIComponent(url)}`),
+    import: (data) => api.post('/cs2/import', data)
   }
 };
