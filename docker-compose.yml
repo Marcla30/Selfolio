@@ -24,6 +24,9 @@ services:
         condition: service_healthy
     ports:
       - "${APP_PORT:-3000}:3000"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     environment:
       - DATABASE_URL=postgresql://portfolio:portfolio@db:5432/portfolio_tracker
       - PORT=3000
