@@ -53,13 +53,11 @@ async function resolveSteamId(profileUrl) {
  */
 async function fetchSteamInventory(steamId64) {
   const url = `${STEAM_INVENTORY_URL}/${steamId64}/730/2`;
-  console.log(`[CS2] Fetching inventory for Steam ID: ${steamId64}`);
-  console.log(`[CS2] URL: ${url}?l=english&count=75`);
 
   let res;
   try {
     res = await axios.get(url, {
-      params: { l: 'english', count: 75 },
+      params: { l: 'english', count: 5000 },
       timeout: 15000,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -68,11 +66,9 @@ async function fetchSteamInventory(steamId64) {
         'Referer': 'https://steamcommunity.com/'
       }
     });
-    console.log(`[CS2] Steam response status: ${res.status}`);
   } catch (err) {
     const status = err.response?.status;
-    const body = err.response?.data;
-    console.error(`[CS2] Steam error ${status}:`, typeof body === 'string' ? body.slice(0, 200) : JSON.stringify(body));
+    console.error(`[CS2] Steam error ${status} for ${steamId64}`);
     if (status === 403 || status === 401) {
       throw new Error('Steam inventory is private. Make sure your CS2 inventory is set to public in your Steam privacy settings.');
     }
