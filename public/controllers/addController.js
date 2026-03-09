@@ -71,12 +71,7 @@ const addController = {
         <div id="walletForm" style="display: none;"></div>
 
         <div id="importForm" style="display: none;">
-          <div style="padding-bottom: 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
-            <h3>${appState.t('add.importHistoryTitle')}</h3>
-            <div id="importHistory" style="max-height: 260px; overflow-y: auto; margin-top: 0.75rem;"></div>
-          </div>
-
-          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
 
             <!-- CSV -->
             <div>
@@ -100,7 +95,7 @@ const addController = {
             <!-- Excel / Bourse Direct -->
             <div>
               <button type="button" class="import-accordion-btn" data-target="importExcelPanel" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1rem; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 0.95rem; text-align: left; color: var(--text-primary);">
-                <span>${appState.t('add.importButton')}</span>
+                <span>Import Bourse Direct</span>
                 <span class="accordion-arrow" style="font-size: 0.75rem; color: var(--text-secondary);">▶</span>
               </button>
               <div id="importExcelPanel" class="import-panel" style="display: none; padding: 1.25rem; border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; margin-bottom: 0.25rem;">
@@ -182,6 +177,11 @@ const addController = {
               </div>
             </div>
 
+          </div>
+
+          <div style="padding-top: 1.5rem; margin-top: 0.5rem; border-top: 1px solid var(--border);">
+            <h3>${appState.t('add.importHistoryTitle')}</h3>
+            <div id="importHistory" style="max-height: 260px; overflow-y: auto; margin-top: 0.75rem;"></div>
           </div>
         </div>
       </div>
