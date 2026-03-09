@@ -1,6 +1,6 @@
 const positionsController = {
   filterType: 'all',
-  sortBy: 'name',
+  sortBy: 'value',
   searchQuery: '',
   
   async render() {

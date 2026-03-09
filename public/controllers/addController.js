@@ -72,6 +72,11 @@ const addController = {
 
         <div id="importForm" style="display: none;">
           <div style="padding-bottom: 2rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border);">
+            <h3>${appState.t('add.importHistoryTitle')}</h3>
+            <div id="importHistory" style="max-height: 260px; overflow-y: auto; margin-top: 0.75rem;"></div>
+          </div>
+
+          <div style="padding-bottom: 2rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border);">
             <h3 style="margin-bottom: 0.5rem;">${appState.t('add.csvImportTitle')}</h3>
             <p style="color: var(--text-secondary); margin-bottom: 1.25rem; font-size: 0.9rem;">${appState.t('add.csvImportDesc')}</p>
             <form id="importCsvForm">
@@ -148,10 +153,6 @@ const addController = {
             <div id="steamStatus" style="margin-top: 1rem; color: var(--text-secondary);"></div>
           </div>
 
-          <div style="margin-top: 2rem;">
-            <h3>${appState.t('add.importHistoryTitle')}</h3>
-            <div id="importHistory"></div>
-          </div>
         </div>
       </div>
 
