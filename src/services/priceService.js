@@ -381,5 +381,6 @@ module.exports = {
   getCurrentPrice,
   prefetchCryptoPrices,
   getHistoricalPrice,
-  getExchangeRate
+  getExchangeRate,
+  fetchCS2BulkPrices
 };

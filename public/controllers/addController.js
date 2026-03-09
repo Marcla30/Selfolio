@@ -936,7 +936,7 @@ const addController = {
     }
   },
 
-  async steamImport() {
+  steamImport() {
     const btn = document.getElementById('steamImportBtn');
     const status = document.getElementById('steamStatus');
     const steamId = btn.dataset.steamId;
@@ -945,40 +945,82 @@ const addController = {
 
     if (!steamId || !portfolioId) return;
 
-    status.textContent = appState.t('add.steam.importing');
     btn.disabled = true;
+    status.style.color = 'var(--text-secondary)';
+    status.innerHTML = `
+      <div style="background: var(--bg-tertiary); border-radius: 4px; height: 8px; overflow: hidden; margin-bottom: 0.5rem;">
+        <div id="steamProgressBar" style="background: var(--success); height: 100%; width: 0%; transition: width 0.3s;"></div>
+      </div>
+      <div id="steamProgressText" style="font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Démarrage...</div>
+    `;
 
-    try {
-      const result = await api.cs2.import({ steamId, steamUrl, portfolioId });
+    const xhr = new XMLHttpRequest();
+    let importDone = false;
 
-      if (result.error) {
-        status.style.color = 'var(--danger)';
-        status.textContent = result.error;
-        btn.disabled = false;
-        return;
-      }
+    xhr.addEventListener('readystatechange', () => {
+      if (xhr.readyState === 3 || xhr.readyState === 4) {
+        const lines = xhr.responseText.split('\n');
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const data = JSON.parse(line.substring(6));
 
-      const lang = appState.language === 'fr';
-      if (result.skipped > 0 && result.imported === 0) {
-        status.style.color = 'var(--warning)';
-        status.textContent = lang
-          ? `${result.skipped} skin(s) déjà importé(s) — aucun doublon ajouté`
-          : `${result.skipped} skin(s) already imported — no duplicates added`;
-      } else {
-        status.style.color = 'var(--success)';
-        status.textContent = lang
-          ? `${result.imported} skin(s) importé(s)${result.skipped > 0 ? `, ${result.skipped} ignoré(s) (déjà présents)` : ''}`
-          : `${result.imported} skin(s) imported${result.skipped > 0 ? `, ${result.skipped} skipped (already present)` : ''}`;
-        if (result.imported > 0) {
-          setTimeout(() => navigate('/'), 2000);
+            if (data.current && data.total) {
+              const pct = Math.round((data.current / data.total) * 100);
+              const bar = document.getElementById('steamProgressBar');
+              const text = document.getElementById('steamProgressText');
+              if (bar) bar.style.width = pct + '%';
+              if (text) text.textContent = `${data.current}/${data.total} — ${data.skinName}`;
+            }
+
+            if (data.done && !importDone) {
+              importDone = true;
+              const { results } = data;
+              const lang = appState.language === 'fr';
+              const parts = [];
+              if (results.imported > 0) parts.push(`${results.imported} skin(s) importé(s)`);
+              if (results.skipped > 0) parts.push(`${results.skipped} déjà présent(s)`);
+              if (results.noPrice > 0) parts.push(`${results.noPrice} sans prix ignoré(s)`);
+
+              if (results.imported === 0 && results.skipped > 0) {
+                status.style.color = 'var(--warning)';
+              } else {
+                status.style.color = 'var(--success)';
+              }
+
+              const bar = document.getElementById('steamProgressBar');
+              if (bar) bar.style.width = '100%';
+              const text = document.getElementById('steamProgressText');
+              if (text) text.textContent = parts.join(' · ');
+
+              this.loadImportHistory();
+              if (results.imported > 0) {
+                setTimeout(() => navigate('/'), 2000);
+              } else {
+                btn.disabled = false;
+              }
+            }
+
+            if (data.error) {
+              status.style.color = 'var(--danger)';
+              const text = document.getElementById('steamProgressText');
+              if (text) text.textContent = 'Erreur : ' + data.error;
+              btn.disabled = false;
+            }
+          } catch (e) {}
         }
       }
-    } catch (error) {
+    });
+
+    xhr.addEventListener('error', () => {
       status.style.color = 'var(--danger)';
-      status.textContent = appState.t('add.steam.errorFetch') + ': ' + error.message;
-    } finally {
+      status.innerHTML = 'Erreur de connexion';
       btn.disabled = false;
-    }
+    });
+
+    xhr.open('POST', '/api/cs2/import');
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify({ steamId, steamUrl, portfolioId }));
   },
 
   switchTab(tab) {
