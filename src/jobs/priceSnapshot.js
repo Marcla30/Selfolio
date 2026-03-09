@@ -41,9 +41,9 @@ async function saveDailyPrices() {
 }
 
 function startDailyPriceJob() {
-  // Run every 30 minutes
-  cron.schedule('*/30 * * * *', saveDailyPrices);
-  console.log('Price snapshot job scheduled (every 30 minutes)');
+  const interval = process.env.PRICE_SNAPSHOT_INTERVAL || '*/30 * * * *';
+  cron.schedule(interval, saveDailyPrices);
+  console.log(`Price snapshot job scheduled (${interval})`);
 
   // Run immediately on startup if no prices saved in last 30 minutes
   checkAndRunInitial();
