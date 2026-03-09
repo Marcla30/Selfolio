@@ -11,8 +11,8 @@ const metalPriceCache = new Map();
 const exchangeRateCache = new Map();
 const EXCHANGE_RATE_TTL = 30 * 60 * 1000;
 // CS2 skin prices: one bulk fetch for ALL items, cached in memory
-// Source: CSGOTrader community price list (free, no API key, updated regularly)
-const CS2_BULK_URL = 'https://prices.csgotrader.com/latest/prices_v6.json';
+// Source: market.csgo.com public price list (free, no API key, ~24k items, updated frequently)
+const CS2_BULK_URL = 'https://market.csgo.com/api/v2/prices/USD.json';
 let cs2BulkPricesMap = null;   // Map<marketHashName, priceUSD>
 let cs2BulkFetchedAt = 0;
 // Per-skin result cache (after conversion to target currency)
@@ -223,12 +223,12 @@ async function fetchCS2BulkPrices() {
   }
   console.log('[CS2] Fetching bulk price list...');
   const res = await axios.get(CS2_BULK_URL, { timeout: 30000 });
-  const data = res.data;
+  const items = res.data?.items;
+  if (!Array.isArray(items)) throw new Error('Unexpected CS2 price API response format');
   cs2BulkPricesMap = new Map();
-  for (const [name, prices] of Object.entries(data)) {
-    // Prefer 24h Steam price, fall back to 7d
-    const usd = prices?.steam?.last_24h || prices?.steam?.last_7d || 0;
-    if (usd > 0) cs2BulkPricesMap.set(name, usd);
+  for (const item of items) {
+    const usd = parseFloat(item.price) || 0;
+    if (usd > 0 && item.market_hash_name) cs2BulkPricesMap.set(item.market_hash_name, usd);
   }
   cs2BulkFetchedAt = now;
   console.log(`[CS2] Bulk prices loaded: ${cs2BulkPricesMap.size} items`);
