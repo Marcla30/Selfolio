@@ -4,6 +4,7 @@ const positionsController = {
   searchQuery: '',
   _assetsWithTransactions: null,
   _portfolios: null,
+  _visibleCount: 50,
 
   async render() {
     const app = document.getElementById('app');
@@ -126,7 +127,7 @@ const positionsController = {
             </select>
           </div>
         </div>
-        ${items.map(item => {
+        ${items.slice(0, this._visibleCount).map(item => {
           const h = item.holding;
           const assetTransactions = item.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -190,6 +191,16 @@ const positionsController = {
             </div>
           `;
         }).join('')}
+        ${items.length > this._visibleCount ? `
+          <div style="text-align: center; padding: 1.25rem 0 0.5rem; color: var(--text-secondary); font-size: 0.87rem;">
+            ${this._visibleCount} / ${items.length} &nbsp;—&nbsp;
+            <button id="loadMoreBtn" type="button" style="background: transparent; border: 1px solid var(--border); padding: 0.4rem 1.2rem; border-radius: 6px; cursor: pointer; color: var(--text-primary); font-size: 0.87rem;">
+              ${appState.language === 'fr' ? `Voir ${Math.min(50, items.length - this._visibleCount)} de plus` : `Show ${Math.min(50, items.length - this._visibleCount)} more`}
+            </button>
+          </div>
+        ` : (items.length > 0 && this._visibleCount > 50 ? `
+          <div style="text-align: center; padding: 0.75rem; color: var(--text-secondary); font-size: 0.87rem;">${items.length} ${appState.language === 'fr' ? 'positions' : 'positions'}</div>
+        ` : '')}
       </div>
 
       <div id="editModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; padding: 1rem; overflow-y: auto;">
@@ -295,6 +306,17 @@ const positionsController = {
 
     this.setupEventListeners();
 
+    // Load more button (pagination)
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', () => {
+        this._visibleCount += 50;
+        const scrollPos = window.scrollY;
+        this._buildList();
+        window.scrollTo(0, scrollPos);
+      });
+    }
+
     // Restore filter and sort state
     document.getElementById('filterType').value = this.filterType;
     document.getElementById('sortBy').value = this.sortBy;
@@ -306,6 +328,7 @@ const positionsController = {
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => {
         const scrollPos = window.scrollY;
+        this._visibleCount = 50;
         this._buildList();
         window.scrollTo(0, scrollPos);
         document.getElementById('searchPositions')?.focus();
@@ -315,11 +338,13 @@ const positionsController = {
     // Filter/sort: re-render from cache, no API call
     document.getElementById('filterType').addEventListener('change', (e) => {
       this.filterType = e.target.value;
+      this._visibleCount = 50;
       this._buildList();
     });
 
     document.getElementById('sortBy').addEventListener('change', (e) => {
       this.sortBy = e.target.value;
+      this._visibleCount = 50;
       this._buildList();
     });
   },
