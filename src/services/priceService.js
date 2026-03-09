@@ -17,6 +17,8 @@ let cs2BulkPricesMap = null;   // Map<marketHashName, priceUSD>
 let cs2BulkFetchedAt = 0;
 // Per-skin result cache (after conversion to target currency)
 const cs2SkinPriceCache = new Map();
+// Dedup map: prevents concurrent requests from firing multiple CoinGecko batch calls
+const pendingPrefetches = new Map();
 
 async function getCurrentPrice(asset, currency = 'EUR', force = false) {
   if (!force) {
@@ -123,43 +125,55 @@ async function getCryptoPrice(symbol, currency = 'EUR') {
 
 // Batch-fetch all crypto prices in ONE CoinGecko request — prevents rate limiting.
 // Only calls CoinGecko if DB cache is stale (no fresh prices found).
+// Deduplicates concurrent calls: if a fetch for the same currency is in-flight, callers wait for it.
 async function prefetchCryptoPrices(assets, currency = 'EUR') {
   const cryptoAssets = assets.filter(a => a.type === 'crypto');
   if (!cryptoAssets.length) return;
 
-  // Check how many cryptos already have a fresh DB cache entry
-  const assetIds = cryptoAssets.map(a => a.id).filter(Boolean);
-  const cutoff = new Date(Date.now() - CACHE_DURATION);
-  const freshCount = assetIds.length > 0 ? await prisma.priceCache.count({
-    where: { assetId: { in: assetIds }, currency, timestamp: { gte: cutoff }, price: { gt: 0 } }
-  }) : 0;
-
-  // All cryptos have fresh DB cache — no need to hit CoinGecko
-  if (freshCount >= cryptoAssets.length) return;
-
-  // Some or all are stale — batch fetch from CoinGecko (1 request for all)
-  const symbols = [...new Set(cryptoAssets.map(a => a.symbol.toUpperCase()))];
-  const coinIds = symbols.map(s => getCoinGeckoId(s));
-
-  try {
-    const response = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
-      params: { ids: coinIds.join(','), vs_currencies: currency.toLowerCase() },
-      timeout: 15000
-    });
-    const now = Date.now();
-    let count = 0;
-    symbols.forEach((sym, i) => {
-      const coinId = coinIds[i];
-      const price = response.data[coinId]?.[currency.toLowerCase()] || 0;
-      if (price > 0) {
-        cryptoPriceCache.set(`${coinId}-${currency}`, { price, fetchedAt: now });
-        count++;
-      }
-    });
-    console.log(`Batch crypto fetch: ${count}/${symbols.length} prices loaded (${currency})`);
-  } catch (error) {
-    console.error('Batch crypto prefetch error:', error.message);
+  // If a batch request for this currency is already in-flight, reuse it
+  if (pendingPrefetches.has(currency)) {
+    return pendingPrefetches.get(currency);
   }
+
+  const fetchPromise = (async () => {
+    // Check how many cryptos already have a fresh DB cache entry
+    const assetIds = cryptoAssets.map(a => a.id).filter(Boolean);
+    const cutoff = new Date(Date.now() - CACHE_DURATION);
+    const freshCount = assetIds.length > 0 ? await prisma.priceCache.count({
+      where: { assetId: { in: assetIds }, currency, timestamp: { gte: cutoff }, price: { gt: 0 } }
+    }) : 0;
+
+    // All cryptos have fresh DB cache — no need to hit CoinGecko
+    if (freshCount >= cryptoAssets.length) return;
+
+    // Some or all are stale — batch fetch from CoinGecko (1 request for all)
+    const symbols = [...new Set(cryptoAssets.map(a => a.symbol.toUpperCase()))];
+    const coinIds = symbols.map(s => getCoinGeckoId(s));
+
+    try {
+      const response = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
+        params: { ids: coinIds.join(','), vs_currencies: currency.toLowerCase() },
+        timeout: 15000
+      });
+      const now = Date.now();
+      let count = 0;
+      symbols.forEach((sym, i) => {
+        const coinId = coinIds[i];
+        const price = response.data[coinId]?.[currency.toLowerCase()] || 0;
+        if (price > 0) {
+          cryptoPriceCache.set(`${coinId}-${currency}`, { price, fetchedAt: now });
+          count++;
+        }
+      });
+      console.log(`Batch crypto fetch: ${count}/${symbols.length} prices loaded (${currency})`);
+    } catch (error) {
+      console.error('Batch crypto prefetch error:', error.message);
+    }
+  })();
+
+  pendingPrefetches.set(currency, fetchPromise);
+  fetchPromise.finally(() => pendingPrefetches.delete(currency));
+  return fetchPromise;
 }
 
 async function getStockPrice(symbol, currency = 'EUR') {

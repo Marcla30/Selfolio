@@ -22,6 +22,23 @@ const dashboardController = {
 
     const scrollPosition = window.scrollY;
     const app = document.getElementById('app');
+
+    app.innerHTML = `
+      <style>
+        @keyframes sk-pulse { 0%,100%{opacity:.4} 50%{opacity:.9} }
+        .sk { background:var(--bg-tertiary); border-radius:6px; animation:sk-pulse 1.4s ease-in-out infinite; }
+      </style>
+      <div class="header-stats">
+        ${[1,2,3,4].map(() => `<div class="stat-card"><div class="sk" style="height:13px;width:55%;margin-bottom:10px"></div><div class="sk" style="height:28px;width:75%"></div></div>`).join('')}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+        <div class="sk" style="height:280px;border-radius:8px"></div>
+        <div class="sk" style="height:280px;border-radius:8px"></div>
+      </div>
+      <div class="sk" style="height:48px;border-radius:8px;margin-bottom:.75rem"></div>
+      ${[1,2,3,4,5].map(() => `<div class="sk" style="height:52px;border-radius:8px;margin-bottom:.5rem"></div>`).join('')}
+    `;
+
     const [holdings, change24h] = await Promise.all([
       api.holdings.getAll('', appState.currency),
       api.stats.getChange24h(appState.currency)

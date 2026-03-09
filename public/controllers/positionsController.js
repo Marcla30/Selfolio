@@ -5,6 +5,16 @@ const positionsController = {
   
   async render() {
     const app = document.getElementById('app');
+
+    app.innerHTML = `
+      <style>
+        @keyframes sk-pulse { 0%,100%{opacity:.4} 50%{opacity:.9} }
+        .sk { background:var(--bg-tertiary); border-radius:6px; animation:sk-pulse 1.4s ease-in-out infinite; }
+      </style>
+      <div class="sk" style="height:44px;border-radius:8px;margin-bottom:1rem"></div>
+      ${[1,2,3,4,5,6,7,8].map(() => `<div class="sk" style="height:62px;border-radius:8px;margin-bottom:.5rem"></div>`).join('')}
+    `;
+
     const holdings = await api.holdings.getAll('', appState.currency);
     const transactions = await api.transactions.getAll();
     const portfolios = await api.portfolios.getAll();
