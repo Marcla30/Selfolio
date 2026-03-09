@@ -120,9 +120,19 @@ function getStartDate(timeframe) {
   }
 }
 
+function getCronIntervalMinutes() {
+  const expr = (process.env.PRICE_SNAPSHOT_INTERVAL || '*/30 * * * *').trim();
+  // */N * * * *  → every N minutes
+  const everyN = expr.match(/^\*\/(\d+)\s/);
+  if (everyN) return parseInt(everyN[1]);
+  // 0 * * * *  → every hour
+  if (/^0\s+\*/.test(expr)) return 60;
+  return 30;
+}
+
 function getDataPoints(timeframe) {
   switch (timeframe) {
-    case '24h': return 24;
+    case '24h': return Math.round(24 * 60 / getCronIntervalMinutes());
     case '7d': return 14;
     case '30d': return 30;
     case '1y': return 52;
