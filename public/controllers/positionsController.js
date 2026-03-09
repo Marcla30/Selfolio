@@ -407,7 +407,8 @@ const positionsController = {
             quantity: sellQty,
             pricePerUnit: data.pricePerUnit ? parseFloat(data.pricePerUnit) : undefined,
             fees: parseFloat(data.fees) || 0,
-            date: data.date
+            date: data.date,
+            currency: appState.currency
           });
           await api.post('/sync', {});
           this.closeSellModal();

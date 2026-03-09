@@ -293,7 +293,8 @@ const addController = {
           quantity: data.quantity,
           date: data.date,
           pricePerUnit: data.pricePerUnit || undefined,
-          fees: data.fees || 0
+          fees: data.fees || 0,
+          currency: appState.currency
         });
 
         // Reset form but keep portfolio and type selections
@@ -901,7 +902,8 @@ const addController = {
           quantity,
           date: date.replace(' ', 'T'),
           pricePerUnit,
-          fees
+          fees,
+          currency: appState.currency
         });
 
         success++;
@@ -1071,7 +1073,7 @@ const addController = {
 
     xhr.open('POST', '/api/cs2/import');
     xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.send(JSON.stringify({ steamId, steamUrl, portfolioId }));
+    xhr.send(JSON.stringify({ steamId, steamUrl, portfolioId, currency: appState.currency }));
   },
 
   switchTab(tab) {

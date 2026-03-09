@@ -25,11 +25,11 @@ router.get('/preview', async (req, res) => {
 
 // POST /api/cs2/import
 // Import CS2 skins from Steam inventory into a portfolio
-// body: { steamId, steamUrl, portfolioId }
+// body: { steamId, steamUrl, portfolioId, currency }
 // Response: SSE stream of progress events
 router.post('/import', async (req, res) => {
   const userId = req.session.userId;
-  const { steamId, steamUrl, portfolioId } = req.body;
+  const { steamId, steamUrl, portfolioId, currency = 'EUR' } = req.body;
 
   if (!steamId || !portfolioId) {
     return res.status(400).json({ error: 'Missing steamId or portfolioId' });
@@ -60,9 +60,9 @@ router.post('/import', async (req, res) => {
     const skins = await fetchSteamInventory(steamId);
     const total = skins.length;
 
-    // Fetch all CS2 prices in one request, then get EUR exchange rate
+    // Fetch all CS2 prices in one request, then get the user's currency exchange rate
     const bulkPrices = await fetchCS2BulkPrices();
-    const eurRate = await getExchangeRate('USD', 'EUR');
+    const rate = await getExchangeRate('USD', currency);
 
     const results = { imported: 0, skipped: 0, noPrice: 0 };
     const importNotes = `Steam import:${steamId}`;
@@ -81,7 +81,7 @@ router.post('/import', async (req, res) => {
         results.noPrice++;
         continue;
       }
-      const priceEur = priceUsd * eurRate;
+      const price = priceUsd * rate;
 
       // Find or create the Asset record
       let asset = await prisma.asset.findUnique({ where: { symbol: marketHashName } });
@@ -113,9 +113,9 @@ router.post('/import', async (req, res) => {
           assetId: asset.id,
           type: 'buy',
           quantity: count,
-          pricePerUnit: priceEur,
+          pricePerUnit: price,
           fees: 0,
-          currency: 'EUR',
+          currency,
           date: new Date(),
           notes: importNotes
         }
@@ -130,14 +130,14 @@ router.post('/import', async (req, res) => {
         const existingQty = parseFloat(holding.quantity);
         const existingAvg = parseFloat(holding.avgPrice);
         const newQty = existingQty + count;
-        const newAvg = ((existingQty * existingAvg) + (count * priceEur)) / newQty;
+        const newAvg = ((existingQty * existingAvg) + (count * price)) / newQty;
         await prisma.holding.update({
           where: { id: holding.id },
           data: { quantity: newQty, avgPrice: newAvg }
         });
       } else {
         await prisma.holding.create({
-          data: { portfolioId, assetId: asset.id, quantity: count, avgPrice: priceEur }
+          data: { portfolioId, assetId: asset.id, quantity: count, avgPrice: price }
         });
       }
 
