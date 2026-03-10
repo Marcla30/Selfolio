@@ -339,7 +339,12 @@ const positionsController = {
         this._visibleCount = 50;
         this._buildList();
         window.scrollTo(0, scrollPos);
-        document.getElementById('searchPositions')?.focus();
+        const searchInput = document.getElementById('searchPositions');
+        if (searchInput) {
+          searchInput.focus();
+          const len = searchInput.value.length;
+          searchInput.setSelectionRange(len, len);
+        }
       }, 300);
     });
 
