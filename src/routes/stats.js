@@ -41,7 +41,7 @@ router.get('/realized-gains', async (req, res) => {
 
 router.get('/change24h', async (req, res) => {
   try {
-    const data = await getChange24h(req.session.userId, req.query.currency || 'EUR');
+    const data = await getChange24h(req.session.userId, req.query.currency || 'EUR', req.query.portfolioId || null);
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });

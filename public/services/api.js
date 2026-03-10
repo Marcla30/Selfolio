@@ -62,7 +62,7 @@ const api = {
     get: (portfolioId, currency) => api.get(`/stats?portfolioId=${portfolioId || ''}&currency=${currency || 'EUR'}`),
     getRecommendations: (portfolioId) => api.get(`/stats/recommendations?portfolioId=${portfolioId || ''}`),
     getRealizedGains: (portfolioId) => api.get(`/stats/realized-gains?portfolioId=${portfolioId || ''}`),
-    getChange24h: (currency) => api.get(`/stats/change24h?currency=${currency || 'EUR'}`)
+    getChange24h: (currency, portfolioId) => api.get(`/stats/change24h?currency=${currency || 'EUR'}&portfolioId=${portfolioId || ''}`)
   },
 
   history: {

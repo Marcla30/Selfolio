@@ -133,8 +133,8 @@ async function getHistoryPeaks(portfolioId, currency = 'EUR', userId) {
 
 module.exports = { getPortfolioStats, getRecommendations, getHistoryPeaks, getRealizedGains, getChange24h };
 
-async function getChange24h(userId, currency = 'EUR') {
-  const portfolioIds = await getUserPortfolioIds(userId, null);
+async function getChange24h(userId, currency = 'EUR', portfolioId = null) {
+  const portfolioIds = await getUserPortfolioIds(userId, portfolioId);
 
   const holdings = await prisma.holding.findMany({
     where: { portfolioId: { in: portfolioIds } },
@@ -147,6 +147,7 @@ async function getChange24h(userId, currency = 'EUR') {
   let currentValue = 0;
   let value24hAgo = 0;
   let assetsWithHistory = 0;
+  const perAsset = [];
 
   for (const h of holdings) {
     const qty = parseFloat(h.quantity);
@@ -158,19 +159,33 @@ async function getChange24h(userId, currency = 'EUR') {
       orderBy: { timestamp: 'desc' }
     });
 
+    const price24h = cache24h ? parseFloat(cache24h.price) : currentPrice;
     if (cache24h) {
-      value24hAgo += qty * parseFloat(cache24h.price);
+      value24hAgo += qty * price24h;
       assetsWithHistory++;
     } else {
       value24hAgo += qty * currentPrice;
     }
+
+    perAsset.push({
+      assetId: h.assetId,
+      name: h.asset.name,
+      symbol: h.asset.symbol,
+      type: h.asset.type,
+      currentPrice,
+      price24h,
+      changePct: price24h > 0 ? ((currentPrice - price24h) / price24h * 100) : 0,
+      changeValue: qty * (currentPrice - price24h),
+      currentValue: qty * currentPrice,
+      hasHistory: !!cache24h
+    });
   }
 
   if (assetsWithHistory === 0) return null;
 
   const changeValue = currentValue - value24hAgo;
   const changePct = value24hAgo > 0 ? (changeValue / value24hAgo * 100) : 0;
-  return { changeValue, changePct };
+  return { changeValue, changePct, currentValue, perAsset };
 }
 
 async function getRealizedGains(portfolioId, userId) {
