@@ -6,6 +6,7 @@ const positionsController = {
   _portfolios: null,
   _visibleCount: 50,
   _menuCloseHandler: null,
+  _addTxAssetId: null,
 
   async render() {
     const app = document.getElementById('app');
@@ -543,6 +544,31 @@ const positionsController = {
         }
       });
     }
+
+    // Debounced date change: fetch historical price automatically
+    const addTxDate = document.getElementById('addTxDate');
+    if (addTxDate) {
+      let dateDebounce;
+      addTxDate.addEventListener('change', () => {
+        if (!this._addTxAssetId) return;
+        clearTimeout(dateDebounce);
+        const priceInput = document.getElementById('addTxPrice');
+        if (priceInput) priceInput.placeholder = '…';
+        dateDebounce = setTimeout(async () => {
+          const date = addTxDate.value;
+          if (!date || !this._addTxAssetId) return;
+          try {
+            const data = await api.assets.getHistoricalPrice(this._addTxAssetId, date, appState.currency);
+            if (priceInput) {
+              priceInput.placeholder = appState.t('add.pricePlaceholder');
+              if (data?.price > 0) priceInput.value = data.price;
+            }
+          } catch (e) {
+            if (priceInput) priceInput.placeholder = appState.t('add.pricePlaceholder');
+          }
+        }, 800);
+      });
+    }
   },
 
   editPosition(id, name, quantity, avgPrice, portfolioId) {
@@ -592,6 +618,7 @@ const positionsController = {
   },
 
   addTransaction(assetId, portfolioId, assetName, assetSymbol) {
+    this._addTxAssetId = assetId;
     document.getElementById('addTxAssetId').value = assetId;
     document.getElementById('addTxPortfolioId').value = portfolioId;
     document.getElementById('addTxQuantity').value = '';

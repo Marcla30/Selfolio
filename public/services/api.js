@@ -39,7 +39,8 @@ const api = {
     getAll: () => api.get('/assets'),
     getById: (id) => api.get(`/assets/${id}`),
     create: (data) => api.post('/assets', data),
-    getPrice: (id, currency) => api.get(`/assets/${id}/price?currency=${currency}`)
+    getPrice: (id, currency) => api.get(`/assets/${id}/price?currency=${currency}`),
+    getHistoricalPrice: (id, date, currency) => api.get(`/assets/${id}/historical-price?date=${encodeURIComponent(date)}&currency=${currency}`)
   },
 
   holdings: {
