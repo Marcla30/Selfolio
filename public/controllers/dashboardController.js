@@ -96,7 +96,8 @@ const dashboardController = {
             <button class="timeframe-btn ${this.currentTimeframe === 'all' ? 'active' : ''}" data-timeframe="all">${appState.language === 'fr' ? 'Tout' : 'All'}</button>
           </div>
         </div>
-        <canvas id="portfolioChart" style="max-height: 400px;"></canvas>
+        <div id="chartSkeleton" class="sk" style="height: 300px; margin: 0.5rem 0;"></div>
+        <canvas id="portfolioChart" style="max-height: 400px; display: none;"></canvas>
         <div class="timeframe-selector" id="timeframeSelector">
           <span id="currentTimeframe">${this.getTimeframeLabel()}</span>
           <span>▼</span>
@@ -429,6 +430,12 @@ const dashboardController = {
       this.chartInstance.destroy();
     }
 
+    // Show skeleton while fetching
+    const skeleton = document.getElementById('chartSkeleton');
+    const canvas = document.getElementById('portfolioChart');
+    if (skeleton) skeleton.style.display = 'block';
+    if (canvas) canvas.style.display = 'none';
+
     const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
     
     // Convert hex to rgba
@@ -445,6 +452,10 @@ const dashboardController = {
     
     const labels = historyData.labels;
     const data = historyData.data;
+
+    // Data loaded — swap skeleton for canvas
+    if (skeleton) skeleton.style.display = 'none';
+    if (canvas) canvas.style.display = 'block';
 
     const ctx = document.getElementById('portfolioChart');
     if (ctx) {
@@ -539,7 +550,7 @@ const dashboardController = {
               ticks: { 
                 color: '#a0a0a0',
                 font: { size: 12 },
-                callback: (value) => appState.formatCurrencyPlain(value, 0)
+                callback: (value) => appState.privacyMode ? '•••' : appState.formatCurrencyPlain(value, 0)
               },
               grid: { 
                 color: 'rgba(255, 255, 255, 0.05)',

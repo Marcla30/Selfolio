@@ -11,6 +11,10 @@ function togglePrivacyMode() {
     btn.classList.toggle('active', appState.privacyMode);
     btn.title = appState.privacyMode ? 'Afficher les montants' : 'Masquer les montants';
   }
+  // Redraw chart Y-axis labels without fetching new data
+  if (typeof dashboardController !== 'undefined' && dashboardController.chartInstance) {
+    dashboardController.chartInstance.update();
+  }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
