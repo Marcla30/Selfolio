@@ -5,6 +5,7 @@ const positionsController = {
   _assetsWithTransactions: null,
   _portfolios: null,
   _visibleCount: 50,
+  _menuCloseHandler: null,
 
   async render() {
     const app = document.getElementById('app');
@@ -13,6 +14,7 @@ const positionsController = {
       <style>
         @keyframes sk-pulse { 0%,100%{opacity:.4} 50%{opacity:.9} }
         .sk { background:var(--bg-tertiary); border-radius:6px; animation:sk-pulse 1.4s ease-in-out infinite; }
+        .menu-item:hover { background: var(--bg-primary) !important; }
       </style>
       <div class="sk" style="height:44px;border-radius:8px;margin-bottom:1rem"></div>
       ${[1,2,3,4,5,6,7,8].map(() => `<div class="sk" style="height:62px;border-radius:8px;margin-bottom:.5rem"></div>`).join('')}
@@ -183,14 +185,17 @@ const positionsController = {
                     </div>
                     <div style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.1rem;">${appState.t('positions.currentPrice')}: ${appState.formatCurrency(currentPrice)}</div>
                   </div>
-                  <div style="display: flex; gap: 0.5rem;" onclick="event.stopPropagation();">
-                    <button onclick="positionsController.addTransaction('${item.assetId}', '${item.portfolioId}', '${item.asset.name.replace(/'/g, "\\'")}', '${item.asset.symbol.replace(/'/g, "\\'")}')" style="background: var(--accent);">${appState.t('positions.addTransaction')}</button>
-                    <button onclick="positionsController.sellPosition('${h.id}', '${item.assetId}', '${item.asset.name}', '${item.asset.symbol}', ${quantity}, ${avgPrice}, '${item.portfolioId}')" style="background: var(--warning);">${appState.t('positions.sell')}</button>
-                    ${buyTxCount <= 1
-                      ? `<button onclick="positionsController.editPosition('${h.id}', '${item.asset.name}', ${quantity}, ${avgPrice}, '${item.portfolioId}')">${appState.t('positions.edit')}</button>`
-                      : `<button onclick="event.stopPropagation(); positionsController.toggleTransactions('${key}')" title="${appState.language === 'fr' ? 'Modifier les transactions individuelles' : 'Edit individual transactions'}">${appState.t('positions.edit')}</button>`
-                    }
-                    <button onclick="positionsController.deletePosition('${h.id}', '${item.asset.name}')" style="background: var(--danger);">${appState.t('positions.delete')}</button>
+                  <div style="position: relative;" onclick="event.stopPropagation();" data-menu>
+                    <button onclick="positionsController.toggleMenu('${key}')" data-menu style="background: var(--bg-secondary); border: 1px solid var(--border); width: 36px; height: 36px; border-radius: 8px; font-size: 1.3rem; padding: 0; cursor: pointer; color: var(--text-secondary);">⋮</button>
+                    <div id="menu-${key}" data-menu style="display: none; position: absolute; right: 0; top: calc(100% + 4px); background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; min-width: 170px; z-index: 200; box-shadow: 0 8px 24px rgba(0,0,0,0.4); overflow: hidden;">
+                      <button class="menu-item" data-menu onclick="positionsController.addTransaction('${item.assetId}', '${item.portfolioId}', '${item.asset.name.replace(/'/g, "\\'")}', '${item.asset.symbol.replace(/'/g, "\\'")}')" style="width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--border);padding:0.65rem 1rem;cursor:pointer;color:#4ade80;font-size:0.88rem;display:flex;align-items:center;gap:0.6rem;"><span>＋</span>${appState.t('positions.addTransaction')}</button>
+                      <button class="menu-item" data-menu onclick="positionsController.sellPosition('${h.id}', '${item.assetId}', '${item.asset.name}', '${item.asset.symbol}', ${quantity}, ${avgPrice}, '${item.portfolioId}')" style="width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--border);padding:0.65rem 1rem;cursor:pointer;color:var(--warning);font-size:0.88rem;display:flex;align-items:center;gap:0.6rem;"><span>↓</span>${appState.t('positions.sell')}</button>
+                      ${buyTxCount <= 1
+                        ? `<button class="menu-item" data-menu onclick="positionsController.editPosition('${h.id}', '${item.asset.name}', ${quantity}, ${avgPrice}, '${item.portfolioId}')" style="width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--border);padding:0.65rem 1rem;cursor:pointer;color:var(--text-primary);font-size:0.88rem;display:flex;align-items:center;gap:0.6rem;"><span>✎</span>${appState.t('positions.edit')}</button>`
+                        : `<button class="menu-item" data-menu onclick="positionsController.toggleTransactions('${key}')" title="${appState.language === 'fr' ? 'Modifier les transactions individuelles' : 'Edit individual transactions'}" style="width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--border);padding:0.65rem 1rem;cursor:pointer;color:var(--text-primary);font-size:0.88rem;display:flex;align-items:center;gap:0.6rem;"><span>✎</span>${appState.t('positions.edit')}</button>`
+                      }
+                      <button class="menu-item" data-menu onclick="positionsController.deletePosition('${h.id}', '${item.asset.name}')" style="width:100%;text-align:left;background:none;border:none;padding:0.65rem 1rem;cursor:pointer;color:var(--danger);font-size:0.88rem;display:flex;align-items:center;gap:0.6rem;"><span>✕</span>${appState.t('positions.delete')}</button>
+                    </div>
                   </div>
                 ` : ''}
               </div>
@@ -352,6 +357,15 @@ const positionsController = {
     `;
 
     this.setupEventListeners();
+
+    // Close kebab menus when clicking outside
+    if (this._menuCloseHandler) document.removeEventListener('click', this._menuCloseHandler, true);
+    this._menuCloseHandler = (e) => {
+      if (!e.target.closest('[data-menu]')) {
+        document.querySelectorAll('[id^="menu-"]').forEach(m => m.style.display = 'none');
+      }
+    };
+    document.addEventListener('click', this._menuCloseHandler, true);
 
     // Load more button (pagination)
     const loadMoreBtn = document.getElementById('loadMoreBtn');
@@ -593,6 +607,14 @@ const positionsController = {
 
   closeAddTransactionModal() {
     document.getElementById('addTransactionModal').style.display = 'none';
+  },
+
+  toggleMenu(key) {
+    const menu = document.getElementById(`menu-${key}`);
+    if (!menu) return;
+    const isOpen = menu.style.display !== 'none';
+    document.querySelectorAll('[id^="menu-"]').forEach(m => m.style.display = 'none');
+    if (!isOpen) menu.style.display = 'block';
   },
 
   updateProfitPreview() {

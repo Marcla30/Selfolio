@@ -13,6 +13,8 @@ async function getHistoricalPrice(asset, datetime, currency = 'EUR') {
         return await getStockHistoricalPrice(asset.symbol, timestamp, currency);
       case 'metal':
         return await getMetalHistoricalPrice(asset.symbol, timestamp, currency);
+      case 'cash':
+        return await getExchangeRate(asset.symbol, currency);
       default:
         return 0;
     }
