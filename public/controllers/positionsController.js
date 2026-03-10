@@ -186,7 +186,7 @@ const positionsController = {
                     <div style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.1rem;">${appState.t('positions.currentPrice')}: ${appState.formatCurrency(currentPrice)}</div>
                   </div>
                   <div style="position: relative;" onclick="event.stopPropagation();" data-menu>
-                    <button onclick="positionsController.toggleMenu('${key}')" data-menu style="background: var(--bg-secondary); border: 1px solid var(--border); width: 36px; height: 36px; border-radius: 8px; font-size: 1.3rem; padding: 0; cursor: pointer; color: var(--text-secondary);">⋮</button>
+                    <button onclick="positionsController.toggleMenu('${key}')" data-menu data-menu-key="${key}" style="background: var(--bg-secondary); border: 1px solid var(--border); width: 36px; height: 36px; border-radius: 8px; font-size: 1.3rem; padding: 0; cursor: pointer; color: var(--text-secondary);">⋮</button>
                     <div id="menu-${key}" data-menu style="display: none; position: absolute; right: 0; top: calc(100% + 4px); background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; min-width: 170px; z-index: 200; box-shadow: 0 8px 24px rgba(0,0,0,0.4); overflow: hidden;">
                       <button class="menu-item" data-menu onclick="positionsController.addTransaction('${item.assetId}', '${item.portfolioId}', '${item.asset.name.replace(/'/g, "\\'")}', '${item.asset.symbol.replace(/'/g, "\\'")}')" style="width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--border);padding:0.65rem 1rem;cursor:pointer;color:#4ade80;font-size:0.88rem;display:flex;align-items:center;gap:0.6rem;"><span>＋</span>${appState.t('positions.addTransaction')}</button>
                       <button class="menu-item" data-menu onclick="positionsController.sellPosition('${h.id}', '${item.assetId}', '${item.asset.name}', '${item.asset.symbol}', ${quantity}, ${avgPrice}, '${item.portfolioId}')" style="width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--border);padding:0.65rem 1rem;cursor:pointer;color:var(--warning);font-size:0.88rem;display:flex;align-items:center;gap:0.6rem;"><span>↓</span>${appState.t('positions.sell')}</button>
@@ -358,10 +358,12 @@ const positionsController = {
 
     this.setupEventListeners();
 
-    // Close kebab menus when clicking outside
+    // Close kebab menus when clicking outside or on a menu action
     if (this._menuCloseHandler) document.removeEventListener('click', this._menuCloseHandler, true);
     this._menuCloseHandler = (e) => {
-      if (!e.target.closest('[data-menu]')) {
+      const isMenuAction = e.target.closest('.menu-item');
+      const isInsideMenu = e.target.closest('[data-menu]');
+      if (!isInsideMenu || isMenuAction) {
         document.querySelectorAll('[id^="menu-"]').forEach(m => m.style.display = 'none');
       }
     };
@@ -614,7 +616,17 @@ const positionsController = {
     if (!menu) return;
     const isOpen = menu.style.display !== 'none';
     document.querySelectorAll('[id^="menu-"]').forEach(m => m.style.display = 'none');
-    if (!isOpen) menu.style.display = 'block';
+    if (!isOpen) {
+      const btn = document.querySelector(`[data-menu-key="${key}"]`);
+      if (btn) {
+        const rect = btn.getBoundingClientRect();
+        menu.style.position = 'fixed';
+        menu.style.top = `${rect.bottom + 4}px`;
+        menu.style.right = `${window.innerWidth - rect.right}px`;
+        menu.style.left = 'auto';
+      }
+      menu.style.display = 'block';
+    }
   },
 
   updateProfitPreview() {
