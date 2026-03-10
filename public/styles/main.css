@@ -17,6 +17,9 @@
   box-sizing: border-box;
 }
 
+@keyframes sk-pulse { 0%,100%{opacity:.4} 50%{opacity:.9} }
+.sk { background:var(--bg-tertiary); border-radius:6px; animation:sk-pulse 1.4s ease-in-out infinite; }
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
   background: var(--bg-primary);
