@@ -254,17 +254,17 @@ const dashboardController = {
       const totalPL = totalValue - totalCost;
       const totalPLPercent = totalCost > 0 ? ((totalValue - totalCost) / totalCost * 100) : 0;
 
-      document.getElementById('dashTotalValue').textContent = appState.formatCurrency(totalValue);
+      document.getElementById('dashTotalValue').innerHTML = appState.formatCurrency(totalValue);
 
       const plEl = document.getElementById('dashTotalPL');
-      plEl.textContent = appState.formatCurrency(totalPL);
+      plEl.innerHTML = appState.formatCurrency(totalPL);
       plEl.className = `stat-value ${totalPL >= 0 ? 'positive' : 'negative'}`;
 
       const plPctEl = document.getElementById('dashTotalPLPct');
       plPctEl.textContent = `${totalPLPercent >= 0 ? '+' : ''}${totalPLPercent.toFixed(2)}%`;
       plPctEl.className = `stat-sublabel ${totalPLPercent >= 0 ? 'positive' : 'negative'}`;
 
-      document.getElementById('dashTotalCost').textContent = appState.formatCurrency(totalCost);
+      document.getElementById('dashTotalCost').innerHTML = appState.formatCurrency(totalCost);
 
       // Update 24h card
       const change24hValue = change24h?.changeValue ?? null;
@@ -273,7 +273,7 @@ const dashboardController = {
         this._change24hData = { value: change24hValue, pct: change24hPct };
         const valEl = document.getElementById('change24hValue');
         if (valEl) {
-          valEl.textContent = this._change24hMode === 'pct'
+          valEl.innerHTML = this._change24hMode === 'pct'
             ? `${change24hPct >= 0 ? '+' : ''}${change24hPct.toFixed(2)}%`
             : `${change24hValue >= 0 ? '+' : ''}${appState.formatCurrency(change24hValue)}`;
           valEl.className = `stat-value ${change24hValue >= 0 ? 'positive' : 'negative'}`;
@@ -539,7 +539,7 @@ const dashboardController = {
               ticks: { 
                 color: '#a0a0a0',
                 font: { size: 12 },
-                callback: (value) => appState.formatCurrency(value, 0)
+                callback: (value) => appState.formatCurrencyPlain(value, 0)
               },
               grid: { 
                 color: 'rgba(255, 255, 255, 0.05)',

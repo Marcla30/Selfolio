@@ -483,5 +483,18 @@ const appState = {
     const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
     const formatted = decimals > 0 ? `${grouped}.${decPart}` : grouped;
     return `<span class="private-amount">${symbol}${formatted}</span>`;
+  },
+
+  // Plain text version for Chart.js labels, textContent, and other non-HTML contexts
+  formatCurrencyPlain(value, decimals = 2) {
+    const symbols = {
+      EUR: '€', USD: '$', GBP: '£', CHF: 'CHF',
+      JPY: '¥', CAD: 'CA$', AUD: 'A$', CNY: '¥'
+    };
+    const symbol = symbols[this.currency] || this.currency;
+    const [intPart, decPart] = value.toFixed(decimals).split('.');
+    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+    const formatted = decimals > 0 ? `${grouped}.${decPart}` : grouped;
+    return `${symbol}${formatted}`;
   }
 };
