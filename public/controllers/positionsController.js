@@ -184,6 +184,7 @@ const positionsController = {
                     <div style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.1rem;">${appState.t('positions.currentPrice')}: ${appState.formatCurrency(currentPrice)}</div>
                   </div>
                   <div style="display: flex; gap: 0.5rem;" onclick="event.stopPropagation();">
+                    <button onclick="positionsController.addTransaction('${item.assetId}', '${item.portfolioId}', '${item.asset.name.replace(/'/g, "\\'")}', '${item.asset.symbol.replace(/'/g, "\\'")}')" style="background: var(--accent);">${appState.t('positions.addTransaction')}</button>
                     <button onclick="positionsController.sellPosition('${h.id}', '${item.assetId}', '${item.asset.name}', '${item.asset.symbol}', ${quantity}, ${avgPrice}, '${item.portfolioId}')" style="background: var(--warning);">${appState.t('positions.sell')}</button>
                     ${buyTxCount <= 1
                       ? `<button onclick="positionsController.editPosition('${h.id}', '${item.asset.name}', ${quantity}, ${avgPrice}, '${item.portfolioId}')">${appState.t('positions.edit')}</button>`
@@ -306,6 +307,44 @@ const positionsController = {
             <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
               <button type="submit" style="flex: 1; background: var(--warning);">${appState.t('positions.sell')}</button>
               <button type="button" onclick="positionsController.closeSellModal()" style="flex: 1; background: var(--bg-tertiary);">${appState.t('confirm.cancel')}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div id="addTransactionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; padding: 1rem; overflow-y: auto;">
+        <div style="position: relative; max-width: 500px; margin: 2rem auto; background: var(--bg-secondary); padding: 2rem; border-radius: 12px; border: 1px solid var(--border);">
+          <h3 style="margin-bottom: 0.5rem;" id="addTransactionTitle">${appState.t('positions.addTransactionTitle')}</h3>
+          <div id="addTransactionInfo" style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;"></div>
+          <form id="addTransactionForm">
+            <div class="form-group">
+              <label>${appState.t('edit.type')}</label>
+              <select name="type" id="addTxType" required>
+                <option value="buy">${appState.t('positions.buy')}</option>
+                <option value="sell">${appState.t('positions.sell')}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>${appState.t('edit.quantity')}</label>
+              <input type="number" step="0.00000001" name="quantity" id="addTxQuantity" required>
+            </div>
+            <div class="form-group">
+              <label>${appState.t('edit.pricePerUnit')}</label>
+              <input type="number" step="0.01" name="pricePerUnit" id="addTxPrice" placeholder="${appState.t('add.pricePlaceholder')}">
+            </div>
+            <div class="form-group">
+              <label>${appState.t('positions.fees')}</label>
+              <input type="number" step="0.01" name="fees" id="addTxFees" value="0">
+            </div>
+            <div class="form-group">
+              <label>${appState.t('positions.date')}</label>
+              <input type="datetime-local" name="date" id="addTxDate" required>
+            </div>
+            <input type="hidden" name="assetId" id="addTxAssetId">
+            <input type="hidden" name="portfolioId" id="addTxPortfolioId">
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+              <button type="submit" style="flex: 1;">${appState.t('edit.save')}</button>
+              <button type="button" onclick="positionsController.closeAddTransactionModal()" style="flex: 1; background: var(--bg-tertiary);">${appState.t('confirm.cancel')}</button>
             </div>
           </form>
         </div>
@@ -459,6 +498,35 @@ const positionsController = {
         }
       });
     }
+
+    const addTxForm = document.getElementById('addTransactionForm');
+    if (addTxForm) {
+      addTxForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+
+        try {
+          const scrollPos = window.scrollY;
+          await api.transactions.create({
+            portfolioId: data.portfolioId,
+            assetId: data.assetId,
+            type: data.type,
+            quantity: parseFloat(data.quantity),
+            pricePerUnit: data.pricePerUnit ? parseFloat(data.pricePerUnit) : 0,
+            fees: parseFloat(data.fees) || 0,
+            date: data.date,
+            currency: appState.currency
+          });
+          await api.post('/sync', {});
+          this.closeAddTransactionModal();
+          await this.render();
+          window.scrollTo(0, scrollPos);
+        } catch (error) {
+          alert('Erreur: ' + error.message);
+        }
+      });
+    }
   },
 
   editPosition(id, name, quantity, avgPrice, portfolioId) {
@@ -505,6 +573,26 @@ const positionsController = {
 
   closeSellModal() {
     document.getElementById('sellModal').style.display = 'none';
+  },
+
+  addTransaction(assetId, portfolioId, assetName, assetSymbol) {
+    document.getElementById('addTxAssetId').value = assetId;
+    document.getElementById('addTxPortfolioId').value = portfolioId;
+    document.getElementById('addTxQuantity').value = '';
+    document.getElementById('addTxPrice').value = '';
+    document.getElementById('addTxFees').value = '0';
+    document.getElementById('addTxType').value = 'buy';
+    document.getElementById('addTransactionInfo').textContent = `${assetName} (${assetSymbol})`;
+
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('addTxDate').value = now.toISOString().slice(0, 16);
+
+    document.getElementById('addTransactionModal').style.display = 'block';
+  },
+
+  closeAddTransactionModal() {
+    document.getElementById('addTransactionModal').style.display = 'none';
   },
 
   updateProfitPreview() {
