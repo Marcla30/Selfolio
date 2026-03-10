@@ -130,6 +130,7 @@ const positionsController = {
         ${items.slice(0, this._visibleCount).map(item => {
           const h = item.holding;
           const assetTransactions = item.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+          const buyTxCount = item.transactions.filter(t => t.type === 'buy').length;
 
           let avgPrice = 0;
           let quantity = 0;
@@ -184,7 +185,10 @@ const positionsController = {
                   </div>
                   <div style="display: flex; gap: 0.5rem;" onclick="event.stopPropagation();">
                     <button onclick="positionsController.sellPosition('${h.id}', '${item.assetId}', '${item.asset.name}', '${item.asset.symbol}', ${quantity}, ${avgPrice}, '${item.portfolioId}')" style="background: var(--warning);">${appState.t('positions.sell')}</button>
-                    <button onclick="positionsController.editPosition('${h.id}', '${item.asset.name}', ${quantity}, ${avgPrice}, '${item.portfolioId}')">${appState.t('positions.edit')}</button>
+                    ${buyTxCount <= 1
+                      ? `<button onclick="positionsController.editPosition('${h.id}', '${item.asset.name}', ${quantity}, ${avgPrice}, '${item.portfolioId}')">${appState.t('positions.edit')}</button>`
+                      : `<button onclick="event.stopPropagation(); positionsController.toggleTransactions('${key}')" title="${appState.language === 'fr' ? 'Modifier les transactions individuelles' : 'Edit individual transactions'}">${appState.t('positions.edit')}</button>`
+                    }
                     <button onclick="positionsController.deletePosition('${h.id}', '${item.asset.name}')" style="background: var(--danger);">${appState.t('positions.delete')}</button>
                   </div>
                 ` : ''}
