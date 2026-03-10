@@ -52,47 +52,50 @@ async function getStockHistoricalPrice(symbol, timestamp, currency) {
   try {
     const now = Math.floor(Date.now() / 1000);
     const daysAgo = (now - timestamp) / 86400;
-    
-    // Use minute data if within last 7 days
+
     const interval = daysAgo <= 7 ? '1m' : '1d';
     const period1 = interval === '1m' ? timestamp - 3600 : timestamp - 86400;
-    const period2 = interval === '1m' ? timestamp + 3600 : timestamp + 86400;
-    
+    // Never request data beyond now — Yahoo Finance returns empty for future periods
+    const period2 = Math.min(
+      interval === '1m' ? timestamp + 3600 : timestamp + 86400,
+      now
+    );
+
     const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`, {
-      params: { 
-        period1,
-        period2,
-        interval
-      }
+      params: { period1, period2, interval }
     });
-    
-    const result = response.data.chart.result[0];
+
+    const result = response.data.chart.result?.[0];
+    if (!result) return 0;
+
     const timestamps = result.timestamp || [];
     const quotes = result.indicators.quote[0];
-    
-    // Find closest timestamp
-    let closestIndex = 0;
-    let minDiff = Math.abs(timestamps[0] - timestamp);
-    
-    for (let i = 1; i < timestamps.length; i++) {
-      const diff = Math.abs(timestamps[i] - timestamp);
-      if (diff < minDiff) {
-        minDiff = diff;
-        closestIndex = i;
+
+    let price = 0;
+
+    if (timestamps.length > 0) {
+      // Find closest data point to requested timestamp
+      let closestIndex = 0;
+      let minDiff = Math.abs(timestamps[0] - timestamp);
+      for (let i = 1; i < timestamps.length; i++) {
+        const diff = Math.abs(timestamps[i] - timestamp);
+        if (diff < minDiff) { minDiff = diff; closestIndex = i; }
       }
+      price = quotes.close?.[closestIndex] || quotes.open?.[closestIndex] || quotes.high?.[closestIndex] || 0;
     }
-    
-    let price = quotes.close?.[closestIndex] || 
-                quotes.open?.[closestIndex] || 
-                quotes.high?.[closestIndex] || 0;
-    
+
+    // Fallback: regularMarketPrice handles today, after-hours, holidays
+    if (!price) {
+      price = result.meta.regularMarketPrice || result.meta.chartPreviousClose || 0;
+    }
+
     // Convert currency if needed
     const stockCurrency = result.meta.currency;
     if (stockCurrency !== currency && price > 0) {
       const rate = await getExchangeRate(stockCurrency, currency);
       price *= rate;
     }
-    
+
     console.log(`Historical price for ${symbol} at ${new Date(timestamp * 1000).toISOString()}: ${price}`);
     return price;
   } catch (error) {

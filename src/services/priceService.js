@@ -331,36 +331,33 @@ async function getCryptoHistoricalPrice(symbol, date, currency) {
 async function getStockHistoricalPrice(symbol, date, currency) {
   try {
     const timestamp = Math.floor(new Date(date).getTime() / 1000);
+    const now = Math.floor(Date.now() / 1000);
     const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`, {
-      params: { 
+      params: {
         period1: timestamp - 86400,
-        period2: timestamp + 86400,
+        period2: Math.min(timestamp + 86400, now),
         interval: '1d'
       }
     });
-    
-    const result = response.data.chart.result[0];
+
+    const result = response.data.chart.result?.[0];
+    if (!result) return 0;
     const quotes = result.indicators.quote[0];
-    
-    // Try to get close price, fallback to open or high
-    let price = quotes.close?.find(p => p !== null) || 
-                quotes.open?.find(p => p !== null) || 
+
+    let price = quotes.close?.find(p => p !== null) ||
+                quotes.open?.find(p => p !== null) ||
                 quotes.high?.find(p => p !== null) || 0;
-    
-    // If still no price, try current price
-    if (price === 0) {
-      price = result.meta.regularMarketPrice || 0;
+
+    if (!price) {
+      price = result.meta.regularMarketPrice || result.meta.chartPreviousClose || 0;
     }
-    
-    // Convert if needed
-    if (currency !== 'EUR' && result.meta.currency === 'EUR' && price > 0) {
-      const rate = await getExchangeRate('EUR', currency);
-      price *= rate;
-    } else if (currency !== 'USD' && result.meta.currency === 'USD' && price > 0) {
-      const rate = await getExchangeRate('USD', currency);
+
+    const stockCurrency = result.meta.currency;
+    if (stockCurrency !== currency && price > 0) {
+      const rate = await getExchangeRate(stockCurrency, currency);
       price *= rate;
     }
-    
+
     console.log(`Historical price for ${symbol} on ${date}: ${price}`);
     return price;
   } catch (error) {
