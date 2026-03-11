@@ -23,10 +23,11 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'portfolio-tracker-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
+  rolling: true,
   cookie: {
-    secure: false,
+    secure: process.env.COOKIE_SECURE === 'true',
     httpOnly: true,
-    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    maxAge: 8 * 60 * 60 * 1000 // 8 hours (rolling — extends on each request)
   }
 }));
 

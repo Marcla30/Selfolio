@@ -8,13 +8,14 @@ datasource db {
 }
 
 model User {
-  id          String    @id @default(uuid())
-  username    String    @unique
-  password    String
-  email       String?
-  name        String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id             String    @id @default(uuid())
+  username       String    @unique
+  password       String
+  email          String?
+  name           String?
+  tokenVersion   Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
   portfolios     Portfolio[]
   settings       Settings?
   steamProfiles  SteamProfile[]
