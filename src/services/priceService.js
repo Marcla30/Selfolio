@@ -176,11 +176,32 @@ async function prefetchCryptoPrices(assets, currency = 'EUR') {
   return fetchPromise;
 }
 
+const YAHOO_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+  'Accept': 'application/json, text/plain, */*',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Origin': 'https://finance.yahoo.com',
+  'Referer': 'https://finance.yahoo.com/',
+};
+
+async function fetchYahooChart(symbol) {
+  const url1 = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
+  const url2 = `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}`;
+  try {
+    const r = await axios.get(url1, { headers: YAHOO_HEADERS, timeout: 10000 });
+    return r.data;
+  } catch (e1) {
+    console.warn(`[Yahoo] query1 failed for ${symbol} (${e1.response?.status ?? e1.message}), trying query2...`);
+    const r = await axios.get(url2, { headers: YAHOO_HEADERS, timeout: 10000 });
+    return r.data;
+  }
+}
+
 async function getStockPrice(symbol, currency = 'EUR') {
   try {
-    const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`);
-    let price = response.data.chart.result[0].meta.regularMarketPrice || 0;
-    const stockCurrency = response.data.chart.result[0].meta.currency;
+    const data = await fetchYahooChart(symbol);
+    let price = data.chart.result[0].meta.regularMarketPrice || 0;
+    const stockCurrency = data.chart.result[0].meta.currency;
     
     // Convert if needed
     if (stockCurrency !== currency && price > 0) {
@@ -332,15 +353,20 @@ async function getStockHistoricalPrice(symbol, date, currency) {
   try {
     const timestamp = Math.floor(new Date(date).getTime() / 1000);
     const now = Math.floor(Date.now() / 1000);
-    const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`, {
-      params: {
-        period1: timestamp - 86400,
-        period2: Math.min(timestamp + 86400, now),
-        interval: '1d'
-      }
-    });
+    const params = { period1: timestamp - 86400, period2: Math.min(timestamp + 86400, now), interval: '1d' };
+    const url1 = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
+    const url2 = `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}`;
 
-    const result = response.data.chart.result?.[0];
+    let data;
+    try {
+      const r = await axios.get(url1, { params, headers: YAHOO_HEADERS, timeout: 10000 });
+      data = r.data;
+    } catch (e1) {
+      console.warn(`[Yahoo] query1 historical failed for ${symbol} (${e1.response?.status ?? e1.message}), trying query2...`);
+      const r = await axios.get(url2, { params, headers: YAHOO_HEADERS, timeout: 10000 });
+      data = r.data;
+    }
+    const result = data.chart.result?.[0];
     if (!result) return 0;
     const quotes = result.indicators.quote[0];
 
