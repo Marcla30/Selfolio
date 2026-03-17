@@ -1,4 +1,4 @@
-# Portfolio Tracker
+# Selfolio
 
 Self-hosted investment tracking application inspired by Delta. No subscription, no third-party account required.
 
@@ -52,7 +52,7 @@ Self-hosted investment tracking application inspired by Delta. No subscription, 
 
 - **Privacy mode**: navbar toggle that blurs all monetary amounts (CSS blur), persists across sessions
 - **Price snapshots**: prices stored in DB every 30 minutes, used to reconstruct the performance chart history
-- **Auth**: 30-day sessions + JWT for mobile use. Registration can be disabled via `REGISTRATION_ENABLED=false`
+- **Auth**: rolling 8h sessions + JWT for mobile use. Registration can be disabled via `REGISTRATION_ENABLED=false`
 - Dark theme
 
 ---
@@ -82,8 +82,8 @@ Self-hosted investment tracking application inspired by Delta. No subscription, 
 
 **1. Clone the repository**
 ```bash
-git clone https://github.com/Marcla30/portfolio-tracker.git
-cd portfolio-tracker
+git clone https://github.com/Marcla30/selfolio.git
+cd selfolio
 ```
 
 **2. Configure environment**
@@ -99,6 +99,9 @@ DATABASE_URL=postgresql://portfolio:a_strong_password@db:5432/portfolio_tracker
 # Generate with: openssl rand -base64 32
 SESSION_SECRET=
 JWT_SECRET=
+
+# Your domain (used for CORS)
+CORS_ORIGIN=https://your-domain.com
 ```
 
 **3. Start**
@@ -126,6 +129,12 @@ docker compose up -d --build
 ```bash
 # View logs
 docker compose logs -f app
+
+# Force refresh all prices
+docker compose exec app node -e "require('./src/jobs/priceSnapshot').saveDailyPrices()"
+
+# Diagnose Yahoo Finance connectivity
+docker compose exec app node scripts/test-yahoo.js
 
 # Stop
 docker compose down
@@ -164,6 +173,7 @@ docker compose up -d
 
 - **Backend:** Node.js, Express, Prisma ORM, PostgreSQL
 - **Frontend:** Vanilla JS, Chart.js
+- **Mobile:** React Native (Expo)
 - **Deployment:** Docker, Docker Compose
 
 ## Architecture
@@ -180,4 +190,6 @@ docker compose up -d
   /styles       - CSS
 /prisma
   schema.prisma - Database schema
+/scripts
+  test-yahoo.js - Yahoo Finance connectivity diagnostic
 ```
