@@ -77,16 +77,6 @@ app.use('/api', requireAuth, apiLimiter, require('./routes/import'));
 app.use('/api', requireAuth, apiLimiter, require('./routes/cache'));
 app.use('/api/cs2', requireAuth, apiLimiter, require('./routes/cs2'));
 
-// Global rate limit for all requests (very generous - shouldn't impact normal usage)
-const globalLimiter = require('express-rate-limit')({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // 1000 requests per windowMs (very permissive for static files)
-  message: 'Too many requests, please try again later',
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) => process.env.NODE_ENV === 'development',
-});
-
 app.get('/health', globalLimiter, (req, res) => {
   res.json({ status: 'ok' });
 });
