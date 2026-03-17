@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const xlsx = require('xlsx');
+const ExcelJS = require('exceljs');
 const { PrismaClient } = require('@prisma/client');
 const axios = require('axios');
 const { fetchYahooChart } = require('../services/priceService');
@@ -37,15 +37,36 @@ const isinToSymbol = {
 router.post('/import-excel', upload.single('file'), async (req, res) => {
   try {
     const { portfolioId } = req.body;
-    
+
     if (!req.file) {
       return res.status(400).json({ error: 'Aucun fichier fourni' });
     }
 
-    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const data = xlsx.utils.sheet_to_json(sheet);
+    // Parse Excel file using exceljs
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(req.file.buffer);
+
+    const worksheet = workbook.worksheets[0];
+    if (!worksheet) {
+      return res.status(400).json({ error: 'Aucune feuille trouvée dans le fichier' });
+    }
+
+    // Get headers from first row
+    const headers = [];
+    worksheet.getRow(1).eachCell((cell) => {
+      headers.push(cell.value);
+    });
+
+    // Convert remaining rows to JSON objects
+    const data = [];
+    worksheet.eachRow((row, rowNum) => {
+      if (rowNum === 1) return; // Skip header row
+      const obj = {};
+      headers.forEach((header, index) => {
+        obj[header] = row.getCell(index + 1).value;
+      });
+      data.push(obj);
+    });
 
     // Set headers for SSE
     res.setHeader('Content-Type', 'text/event-stream');
