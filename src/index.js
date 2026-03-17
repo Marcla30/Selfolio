@@ -8,6 +8,7 @@ const { initializeVapidKeys } = require('./services/pushService');
 const { startWalletSyncJob } = require('./jobs/walletSync');
 const { startDailyPriceJob } = require('./jobs/priceSnapshot');
 const { requireAuth } = require('./middleware/auth');
+const { authLimiter, apiLimiter } = require('./middleware/rateLimiter');
 
 // Validate required environment variables
 const requiredEnvVars = ['SESSION_SECRET', 'JWT_SECRET'];
@@ -51,23 +52,23 @@ app.use(session({
 
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Auth routes (no auth required)
-app.use('/api/auth', require('./routes/auth'));
+// Auth routes with rate limiting
+app.use('/api/auth', authLimiter, require('./routes/auth'));
 
-// Protected routes
-app.use('/api/portfolios', requireAuth, require('./routes/portfolios'));
-app.use('/api/assets', requireAuth, require('./routes/assets'));
-app.use('/api/holdings', requireAuth, require('./routes/holdings'));
-app.use('/api/transactions', requireAuth, require('./routes/transactions'));
-app.use('/api/wallets', requireAuth, require('./routes/wallets'));
-app.use('/api/stats', requireAuth, require('./routes/stats'));
-app.use('/api/settings', requireAuth, require('./routes/settings'));
-app.use('/api/notifications', requireAuth, require('./routes/notifications'));
-app.use('/api/history', requireAuth, require('./routes/history'));
-app.use('/api', requireAuth, require('./routes/sync'));
-app.use('/api', requireAuth, require('./routes/import'));
-app.use('/api', requireAuth, require('./routes/cache'));
-app.use('/api/cs2', requireAuth, require('./routes/cs2'));
+// Protected routes with rate limiting
+app.use('/api/portfolios', requireAuth, apiLimiter, require('./routes/portfolios'));
+app.use('/api/assets', requireAuth, apiLimiter, require('./routes/assets'));
+app.use('/api/holdings', requireAuth, apiLimiter, require('./routes/holdings'));
+app.use('/api/transactions', requireAuth, apiLimiter, require('./routes/transactions'));
+app.use('/api/wallets', requireAuth, apiLimiter, require('./routes/wallets'));
+app.use('/api/stats', requireAuth, apiLimiter, require('./routes/stats'));
+app.use('/api/settings', requireAuth, apiLimiter, require('./routes/settings'));
+app.use('/api/notifications', requireAuth, apiLimiter, require('./routes/notifications'));
+app.use('/api/history', requireAuth, apiLimiter, require('./routes/history'));
+app.use('/api', requireAuth, apiLimiter, require('./routes/sync'));
+app.use('/api', requireAuth, apiLimiter, require('./routes/import'));
+app.use('/api', requireAuth, apiLimiter, require('./routes/cache'));
+app.use('/api/cs2', requireAuth, apiLimiter, require('./routes/cs2'));
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
