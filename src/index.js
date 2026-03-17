@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 3000;
 // Trust reverse proxy (nginx etc.) so req.secure reflects X-Forwarded-Proto: https
 app.set('trust proxy', 1);
 
-app.use(cors({ credentials: true, origin: true }));
+app.use(cors({ credentials: true, origin: process.env.CORS_ORIGIN || 'https://selfolio.app' }));
 app.use(express.json());
 app.use(session({
   store: new pgSession({
@@ -23,7 +23,7 @@ app.use(session({
     tableName: 'Session',
     createTableIfMissing: true
   }),
-  secret: process.env.SESSION_SECRET || 'portfolio-tracker-secret-key-change-in-production',
+  secret: process.env.SESSION_SECRET || 'selfolio-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
   rolling: true,
@@ -74,7 +74,7 @@ async function start() {
     startDailyPriceJob();
     
     app.listen(PORT, () => {
-      console.log(`Portfolio Tracker running on port ${PORT}`);
+      console.log(`Selfolio running on port ${PORT}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

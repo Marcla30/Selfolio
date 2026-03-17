@@ -12,7 +12,7 @@ const loginController = {
     app.innerHTML = `
       <div class="login-wrapper">
         <div class="card login-card">
-          <h2 style="text-align: center; margin-bottom: 2rem;">Portfolio Tracker</h2>
+          <h2 style="text-align: center; margin-bottom: 2rem;">Selfolio</h2>
 
           <div id="loginView">
             <form id="loginForm">

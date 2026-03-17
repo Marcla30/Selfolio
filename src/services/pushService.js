@@ -40,7 +40,7 @@ async function initializeVapidKeys() {
   
   if (settings) {
     webpush.setVapidDetails(
-      process.env.VAPID_SUBJECT || 'mailto:admin@portfoliotracker.com',
+      process.env.VAPID_SUBJECT || 'mailto:admin@selfolio.app',
       settings.vapidPublicKey,
       settings.vapidPrivateKey
     );
