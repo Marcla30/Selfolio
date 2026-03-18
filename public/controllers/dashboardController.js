@@ -62,21 +62,44 @@ const dashboardController = {
     app.innerHTML = `
       <div class="header-stats">
         <div class="stat-card">
-          <div class="stat-label">${appState.t('dashboard.totalValue')}</div>
+          <div class="stat-label" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>${appState.t('dashboard.totalValue')}</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent);">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+              <path d="M1 10h22"></path>
+            </svg>
+          </div>
           <div class="stat-value" id="dashTotalValue">${appState.formatCurrency(totalValue)}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">${appState.t('dashboard.totalPL')}</div>
+          <div class="stat-label" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>${appState.t('dashboard.totalPL')}</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent);">
+              <polyline points="23 6 13.5 15.5 8 10 1 17"></polyline>
+              <polyline points="17 6 23 6 23 12"></polyline>
+            </svg>
+          </div>
           <div class="stat-value ${totalPL >= 0 ? 'positive' : 'negative'}" id="dashTotalPL">${appState.formatCurrency(totalPL)}</div>
           <div class="stat-sublabel ${totalPLPercent >= 0 ? 'positive' : 'negative'}" id="dashTotalPLPct">${totalPLPercent >= 0 ? '+' : ''}${totalPLPercent.toFixed(2)}%</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">${appState.t('dashboard.totalCost')}</div>
+          <div class="stat-label" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>${appState.t('dashboard.totalCost')}</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent);">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+              <line x1="7" y1="7" x2="7.01" y2="7"></line>
+            </svg>
+          </div>
           <div class="stat-value" id="dashTotalCost">${appState.formatCurrency(totalCost)}</div>
         </div>
         ${change24hValue !== null ? `
         <div class="stat-card" id="change24hCard" style="cursor: pointer;">
-          <div class="stat-label">24h</div>
+          <div class="stat-label" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>24h</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent);">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+          </div>
           <div class="stat-value ${change24hValue >= 0 ? 'positive' : 'negative'}" id="change24hValue">
             ${this._change24hMode === 'pct'
               ? `${change24hPct >= 0 ? '+' : ''}${change24hPct.toFixed(2)}%`
