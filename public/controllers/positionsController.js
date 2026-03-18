@@ -7,6 +7,7 @@ const positionsController = {
   _portfolios: null,
   _visibleCount: 50,
   _menuCloseHandler: null,
+  _clickHandler: null,
   _addTxAssetId: null,
 
   async render() {
@@ -169,7 +170,7 @@ const positionsController = {
 
           return `
             <div style="margin-bottom: 2rem; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
-              <div style="background: var(--bg-tertiary); padding: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; cursor: pointer;" onclick="positionsController.toggleTransactions('${key}')">
+              <div style="background: var(--bg-tertiary); padding: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; cursor: pointer;" data-header-key="${key}">
                 <div style="flex: 1; display: flex; align-items: center; gap: 1rem;">
                   <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: white; flex-shrink: 0;">
                     ${item.asset.symbol.substring(0, 2).toUpperCase()}
@@ -206,9 +207,7 @@ const positionsController = {
                   </div>
                 ` : ''}
               </div>
-              ${assetTransactions.length > 0 ? `
-                <div id="transactions-${key}" class="tx-panel" style="display: none;"></div>
-              ` : ''}
+              <div id="transactions-${key}" class="tx-panel" style="display: none;"></div>
             </div>
           `;
         }).join('')}
@@ -583,8 +582,9 @@ const positionsController = {
       });
     }
 
-    // Event delegation for menu buttons - using data attributes instead of inline onclick
-    document.addEventListener('click', (e) => {
+    // Event delegation for menu buttons - remove old handler and add new one
+    if (this._clickHandler) document.removeEventListener('click', this._clickHandler);
+    this._clickHandler = (e) => {
       // Close modals
       if (e.target.classList.contains('close-edit-modal-btn')) {
         this.closeModal();
@@ -600,6 +600,14 @@ const positionsController = {
       }
       if (e.target.classList.contains('close-add-transaction-modal-btn')) {
         this.closeAddTransactionModal();
+        return;
+      }
+
+      // Header click - toggle transactions (only if not clicking menu)
+      const header = e.target.closest('[data-header-key]');
+      if (header && !e.target.closest('[data-menu]') && !e.target.closest('.menu-item')) {
+        const key = header.dataset.headerKey;
+        this.toggleTransactions(key);
         return;
       }
 
@@ -666,7 +674,8 @@ const positionsController = {
         this.toggleTransactions(key);
         return;
       }
-    });
+    };
+    document.addEventListener('click', this._clickHandler);
   },
 
   editPosition(id, name, quantity, avgPrice, portfolioId) {

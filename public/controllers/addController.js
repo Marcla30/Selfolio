@@ -781,20 +781,18 @@ const addController = {
 
     // Save to import history
     try {
-      await fetch('/api/import-history', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fileName: fileName || 'import.csv',
-          totalRows,
-          successCount: success,
-          ignoredCount: ignored,
-          errorCount: errors.length,
-          ignoredAssets: [],
-          errors
-        })
+      await api.post('/import-history', {
+        fileName: fileName || 'import.csv',
+        totalRows,
+        successCount: success,
+        ignoredCount: ignored,
+        errorCount: errors.length,
+        ignoredAssets: [],
+        errors
       });
-    } catch (e) {}
+    } catch (e) {
+      console.error('Failed to save import history:', e);
+    }
 
     let html = `<span style="color: var(--success);">${appState.t('add.csvImportDone')}: ${success} ${appState.t('add.csvImportTransactions')}</span>`;
     if (errors.length > 0) {
