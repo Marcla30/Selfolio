@@ -441,172 +441,35 @@ const addController = {
       const results = [];
       const lowerQuery = query.toLowerCase();
 
-      if (typeFilter === 'stock') {
-        const stocks = [
-          // CAC 40
-          { symbol: 'MC.PA', name: 'LVMH', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'TTE.PA', name: 'TotalEnergies', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'OR.PA', name: 'L\'Oréal', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'SAN.PA', name: 'Sanofi', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'AI.PA', name: 'Air Liquide', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'CS.PA', name: 'AXA', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'SU.PA', name: 'Schneider Electric', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'BNP.PA', name: 'BNP Paribas', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'SAF.PA', name: 'Safran', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'AIR.PA', name: 'Airbus', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'DG.PA', name: 'Vinci', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'LI.PA', name: 'Klépierre', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'BN.PA', name: 'Danone', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'CAP.PA', name: 'Capgemini', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'RMS.PA', name: 'Hermès', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'KER.PA', name: 'Kering', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'EN.PA', name: 'Bouygues', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'SGO.PA', name: 'Saint-Gobain', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'EL.PA', name: 'EssilorLuxottica', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'STMPA.PA', name: 'STMicroelectronics', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'PUB.PA', name: 'Publicis', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'RI.PA', name: 'Pernod Ricard', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'URW.AS', name: 'Unibail-Rodamco-Westfield', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'GLE.PA', name: 'Société Générale', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'ACA.PA', name: 'Crédit Agricole', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'ML.PA', name: 'Michelin', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'RNO.PA', name: 'Renault', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'ORA.PA', name: 'Orange', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'VIE.PA', name: 'Veolia', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'DSY.PA', name: 'Dassault Systèmes', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'TEP.PA', name: 'Téléperformance', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'WLN.PA', name: 'Worldline', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'ATO.PA', name: 'Atos', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'ALO.PA', name: 'Alstom', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'FP.PA', name: 'TotalEnergies', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'ENGI.PA', name: 'Engie', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'FGR.PA', name: 'Eiffage', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'HO.PA', name: 'Thales', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'VIV.PA', name: 'Vivendi', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'MMB.PA', name: 'Lagardère', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'DEC.PA', name: 'JCDecaux', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'FDJ.PA', name: 'La Française des Jeux', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'NXI.PA', name: 'Nexity', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'OVH.PA', name: 'OVHcloud', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'RUI.PA', name: 'Rubis', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'STF.PA', name: 'Stef', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'UBI.PA', name: 'Ubisoft', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'ETL.PA', name: 'Eutelsat', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'GTT.PA', name: 'GTT', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'EDEN.PA', name: 'Edenred', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'SW.PA', name: 'Sodexo', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'LR.PA', name: 'Legrand', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'SOLB.BR', name: 'Solvay', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'ABI.BR', name: 'AB InBev', type: 'stock', typeLabel: 'Action' },
-          // S&P 500 principales
-          { symbol: 'AAPL', name: 'Apple', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'MSFT', name: 'Microsoft', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'GOOGL', name: 'Alphabet (Google)', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'AMZN', name: 'Amazon', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'TSLA', name: 'Tesla', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'NVDA', name: 'Nvidia', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'META', name: 'Meta (Facebook)', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'NFLX', name: 'Netflix', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'UPS', name: 'United Parcel Service', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'JPM', name: 'JPMorgan Chase', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'V', name: 'Visa', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'MA', name: 'Mastercard', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'WMT', name: 'Walmart', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'JNJ', name: 'Johnson & Johnson', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'PG', name: 'Procter & Gamble', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'DIS', name: 'Disney', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'BAC', name: 'Bank of America', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'XOM', name: 'Exxon Mobil', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'CVX', name: 'Chevron', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'KO', name: 'Coca-Cola', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'PEP', name: 'PepsiCo', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'COST', name: 'Costco', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'ABBV', name: 'AbbVie', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'MRK', name: 'Merck', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'PFE', name: 'Pfizer', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'CSCO', name: 'Cisco', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'INTC', name: 'Intel', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'AMD', name: 'AMD', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'ADBE', name: 'Adobe', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'CRM', name: 'Salesforce', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'ORCL', name: 'Oracle', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'IBM', name: 'IBM', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'QCOM', name: 'Qualcomm', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'TXN', name: 'Texas Instruments', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'NKE', name: 'Nike', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'MCD', name: 'McDonald\'s', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'SBUX', name: 'Starbucks', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'BA', name: 'Boeing', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'CAT', name: 'Caterpillar', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'GE', name: 'General Electric', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'MMM', name: '3M', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'HON', name: 'Honeywell', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'UNH', name: 'UnitedHealth', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'HD', name: 'Home Depot', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'LOW', name: 'Lowe\'s', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'T', name: 'AT&T', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'VZ', name: 'Verizon', type: 'stock', typeLabel: 'Action' },
-          { symbol: 'CMCSA', name: 'Comcast', type: 'stock', typeLabel: 'Action' }
-        ];
-        stocks.forEach(s => {
-          if (s.name.toLowerCase().includes(lowerQuery) || s.symbol.toLowerCase().includes(lowerQuery)) {
-            results.push(s);
+      if (typeFilter === 'stock' || typeFilter === 'etf') {
+        // Dynamic search using Yahoo Finance API
+        try {
+          const yahooRes = await fetch(`https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=10&newsCount=0`);
+          const yahooData = await yahooRes.json();
+
+          if (yahooData.quotes && Array.isArray(yahooData.quotes)) {
+            yahooData.quotes.forEach(q => {
+              // Filter by quoteType
+              if (typeFilter === 'stock' && q.quoteType === 'EQUITY') {
+                results.push({
+                  symbol: q.symbol,
+                  name: q.shortname || q.longname || q.symbol,
+                  type: 'stock',
+                  typeLabel: appState.language === 'fr' ? 'Action' : 'Stock'
+                });
+              } else if (typeFilter === 'etf' && q.quoteType === 'ETF') {
+                results.push({
+                  symbol: q.symbol,
+                  name: q.shortname || q.longname || q.symbol,
+                  type: 'etf',
+                  typeLabel: 'ETF'
+                });
+              }
+            });
           }
-        });
-      } else if (typeFilter === 'etf') {
-        const etfs = [
-          // ETF PEA
-          { symbol: 'CW8.PA', name: 'Amundi MSCI World', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'EWLD.PA', name: 'Lyxor MSCI World', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'PE500.PA', name: 'Amundi PEA S&P 500', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'LYPS.PA', name: 'Lyxor PEA S&P 500', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'PAEEM.PA', name: 'Amundi PEA Emerging Markets', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'PANX.PA', name: 'Amundi PEA Nasdaq-100', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'PCEU.PA', name: 'Amundi PEA Europe', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'PUST.PA', name: 'Amundi PEA US Tech', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'RS2K.PA', name: 'Amundi Russell 2000', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'MEUD.PA', name: 'Amundi MSCI Europe', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'AASI.PA', name: 'Amundi MSCI Asia Pacific', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'PAASI.PA', name: 'Amundi PEA Asie Pacifique', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'PJPN.PA', name: 'Amundi PEA Japan', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'IQQH.DE', name: 'iShares STOXX Europe 600 Real Estate', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'INRG.L', name: 'iShares Global Clean Energy', type: 'etf', typeLabel: 'ETF' },
-          // ETF US
-          { symbol: 'SPY', name: 'SPDR S&P 500', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'VOO', name: 'Vanguard S&P 500', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'IVV', name: 'iShares Core S&P 500', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'QQQ', name: 'Invesco QQQ (Nasdaq 100)', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'VTI', name: 'Vanguard Total Stock Market', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'VEA', name: 'Vanguard FTSE Developed Markets', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'VWO', name: 'Vanguard FTSE Emerging Markets', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'AGG', name: 'iShares Core US Aggregate Bond', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'BND', name: 'Vanguard Total Bond Market', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'VNQ', name: 'Vanguard Real Estate', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'GLD', name: 'SPDR Gold Shares', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'SLV', name: 'iShares Silver Trust', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'TLT', name: 'iShares 20+ Year Treasury Bond', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'EEM', name: 'iShares MSCI Emerging Markets', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'EFA', name: 'iShares MSCI EAFE', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'IWM', name: 'iShares Russell 2000', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'DIA', name: 'SPDR Dow Jones Industrial Average', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'XLF', name: 'Financial Select Sector SPDR', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'XLE', name: 'Energy Select Sector SPDR', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'XLK', name: 'Technology Select Sector SPDR', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'XLV', name: 'Health Care Select Sector SPDR', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'XLI', name: 'Industrial Select Sector SPDR', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'XLP', name: 'Consumer Staples Select Sector SPDR', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'XLY', name: 'Consumer Discretionary Select Sector SPDR', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'XLU', name: 'Utilities Select Sector SPDR', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'ARKK', name: 'ARK Innovation ETF', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'ARKG', name: 'ARK Genomic Revolution ETF', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'ICLN', name: 'iShares Global Clean Energy', type: 'etf', typeLabel: 'ETF' },
-          { symbol: 'TAN', name: 'Invesco Solar ETF', type: 'etf', typeLabel: 'ETF' }
-        ];
-        etfs.forEach(e => {
-          if (e.name.toLowerCase().includes(lowerQuery) || e.symbol.toLowerCase().includes(lowerQuery)) {
-            results.push(e);
-          }
-        });
+        } catch (e) {
+          console.error('Yahoo Finance search failed:', e);
+        }
       } else if (typeFilter === 'metal') {
         const metals = [
           { symbol: 'XAU', name: 'Or (once)', type: 'metal', typeLabel: 'Métal', aliases: ['gold', 'or'] },
