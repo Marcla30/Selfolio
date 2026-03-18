@@ -88,6 +88,7 @@ const loginController = {
 
         const user = await response.json();
         localStorage.setItem('user', JSON.stringify({ id: user.id, username: user.username, name: user.name }));
+        api.clearCsrfToken(); // Refresh CSRF token for new session
         await appState.init();
         navigate('/');
       } catch (error) {
@@ -126,6 +127,7 @@ const loginController = {
 
         const user = await response.json();
         localStorage.setItem('user', JSON.stringify({ id: user.id, username: user.username, name: user.name }));
+        api.clearCsrfToken(); // Refresh CSRF token for new session
         await appState.init();
         navigate('/');
       } catch (error) {

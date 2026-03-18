@@ -120,6 +120,7 @@ function updateNavbar() {
       document.getElementById('mobileMenuBtn')?.classList.remove('hidden');
       await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
       localStorage.removeItem('user');
+      api.clearCsrfToken(); // Clear CSRF token after logout
       navigate('/login');
     };
     document.querySelector('.nav-links').appendChild(logoutBtn);

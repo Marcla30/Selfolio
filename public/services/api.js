@@ -1,5 +1,27 @@
 const API_BASE = '/api';
 
+// CSRF token cache
+let csrfToken = null;
+
+// Fetch CSRF token from server
+async function getCsrfToken() {
+  if (csrfToken) return csrfToken;
+  try {
+    const res = await fetch(`${API_BASE}/auth/csrf-token`);
+    const data = await res.json();
+    csrfToken = data.csrfToken;
+    return csrfToken;
+  } catch (e) {
+    console.error('Failed to fetch CSRF token:', e);
+    return null;
+  }
+}
+
+// Clear CSRF token cache (call after login/logout)
+function clearCsrfToken() {
+  csrfToken = null;
+}
+
 const api = {
   async get(endpoint) {
     const res = await fetch(`${API_BASE}${endpoint}`);
@@ -7,25 +29,40 @@ const api = {
   },
 
   async post(endpoint, data) {
+    const token = await getCsrfToken();
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['x-csrf-token'] = token;
+
     const res = await fetch(`${API_BASE}${endpoint}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(data)
     });
     return res.json();
   },
 
   async put(endpoint, data) {
+    const token = await getCsrfToken();
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['x-csrf-token'] = token;
+
     const res = await fetch(`${API_BASE}${endpoint}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(data)
     });
     return res.json();
   },
 
   async delete(endpoint) {
-    const res = await fetch(`${API_BASE}${endpoint}`, { method: 'DELETE' });
+    const token = await getCsrfToken();
+    const headers = {};
+    if (token) headers['x-csrf-token'] = token;
+
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      method: 'DELETE',
+      headers
+    });
     return res.json();
   },
 
@@ -84,5 +121,8 @@ const api = {
     preview: (url) => api.get(`/cs2/preview?url=${encodeURIComponent(url)}`),
     import: (data) => api.post('/cs2/import', data),
     profiles: () => api.get('/cs2/profiles')
-  }
+  },
+
+  // Clear CSRF token cache (call after login/logout to refresh token)
+  clearCsrfToken
 };
